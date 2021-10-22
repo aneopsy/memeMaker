@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "ts-node src/index.ts",
     "start": "node build/index.js",
     "build": "tsc",
     "postinstall": "npm run build"

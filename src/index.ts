@@ -28,6 +28,17 @@ app.get("/gif/:dna", async (req, res) => {
   res.end(img);
 });
 
+app.get("/decode/:dna", async (req, res) => {
+  const { params } = req;
+  const dna = params?.dna;
+
+  const unsequenced = unsequence(dna);
+
+  const headers = { "Content-Type": "application/json" };
+  res.writeHead(200, headers);
+  res.end(JSON.stringify(unsequenced));
+});
+
 app.get("/", (req, res) => res.send("You have reached the Pixsols Generator"));
 
 app.listen(port, () => {
