@@ -19,13 +19,13 @@ export function hex2buff(hexString) {
   return array;
 }
 
-export function buf2hex(buffer) {
+export function buf2hex(buffer: number[]) {
   return [...new Uint16Array(buffer)]
     .map((x) => x.toString(16).padStart(4, "0"))
     .join("");
 }
 
-export function buf2bin(buffer) {
+export function buf2bin(buffer: number[]) {
   return [...new Uint16Array(buffer)]
     .map((x) => x.toString(2).padStart(16, "0"))
     .join("");
@@ -41,3 +41,15 @@ export const unsequence = (sequence: string): any[] =>
     });
     return acc;
   }, []);
+
+export const sequence = (object: any[]): string =>
+  buf2hex(
+    object.reduce((acc: number[], id: any): number[] => {
+      acc.push(
+        attributeTable
+          .find((attr) => attr.name === id.trait_type)
+          .items.find((trait) => trait.name === id.value).id as number
+      );
+      return acc;
+    }, [])
+  );
