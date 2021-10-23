@@ -16,6 +16,7 @@
     "@project-serum/anchor": "^0.17.1-beta.2",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.30.0",
+    "aws-sdk": "^2.1013.0",
     "axios": "^0.23.0",
     "bs58": "^4.0.1",
     "canvas": "^2.6.1",

@@ -64,7 +64,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.awaitTransactionSignatureConfirmation = exports.sendSignedTransaction = exports.sendTransactionWithRetryWithKeypair = void 0;
+exports.awaitParsedConfirmedTransactions = exports.awaitTransactionSignatureConfirmation = exports.sendSignedTransaction = exports.sendTransactionWithRetryWithKeypair = void 0;
 var web3_js_1 = require("@solana/web3.js");
 var various_1 = require("./various");
 var constants_1 = require("./constants");
@@ -355,4 +355,64 @@ function awaitTransactionSignatureConfirmation(txid, timeout, connection, commit
     });
 }
 exports.awaitTransactionSignatureConfirmation = awaitTransactionSignatureConfirmation;
+function awaitParsedConfirmedTransactions(txid, timeout, connection, commitment) {
+    if (commitment === void 0) { commitment = "confirmed"; }
+    return __awaiter(this, void 0, void 0, function () {
+        var done;
+        var _this = this;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    done = false;
+                    return [4 /*yield*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                            var signatureStatuses, result, e_3;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        setTimeout(function () {
+                                            if (done) {
+                                                return;
+                                            }
+                                            done = true;
+                                            loglevel_1.default.warn("Rejecting for timeout...");
+                                            reject({ timeout: true });
+                                        }, timeout);
+                                        _a.label = 1;
+                                    case 1:
+                                        console.log(".");
+                                        _a.label = 2;
+                                    case 2:
+                                        _a.trys.push([2, 4, , 5]);
+                                        return [4 /*yield*/, connection.getParsedConfirmedTransactions([txid], commitment)];
+                                    case 3:
+                                        signatureStatuses = _a.sent();
+                                        result = signatureStatuses && signatureStatuses[0];
+                                        if (result) {
+                                            done = true;
+                                            resolve(result);
+                                        }
+                                        return [3 /*break*/, 5];
+                                    case 4:
+                                        e_3 = _a.sent();
+                                        if (!done) {
+                                            loglevel_1.default.error("REST connection error: txid", txid, e_3);
+                                        }
+                                        return [3 /*break*/, 5];
+                                    case 5: return [4 /*yield*/, (0, various_1.sleep)(2000)];
+                                    case 6:
+                                        _a.sent();
+                                        _a.label = 7;
+                                    case 7:
+                                        if (!done) return [3 /*break*/, 1];
+                                        _a.label = 8;
+                                    case 8: return [2 /*return*/];
+                                }
+                            });
+                        }); })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+exports.awaitParsedConfirmedTransactions = awaitParsedConfirmedTransactions;
 //# sourceMappingURL=transactions.js.map

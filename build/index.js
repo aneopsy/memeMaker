@@ -70,6 +70,12 @@ var metadata_1 = require("./helpers/metadata");
 var gif_1 = require("./helpers/gif");
 var dna_1 = require("./helpers/dna");
 var transactions_1 = require("./helpers/transactions");
+var tables_1 = require("./helpers/tables");
+var pixsols_1 = __importDefault(require("./helpers/pixsols"));
+var constants_1 = require("./helpers/constants");
+var loglevel_1 = __importDefault(require("loglevel"));
+loglevel_1.default.setLevel("info");
+require("dotenv").config();
 var app = (0, express_1.default)();
 app.use(express_1.default.json());
 var port = process.env.PORT || 8081;
@@ -123,6 +129,24 @@ app.get("/decode/:dna", function (req, res) { return __awaiter(void 0, void 0, v
         return [2 /*return*/];
     });
 }); });
+app.get("/attributes", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var headers;
+    return __generator(this, function (_a) {
+        headers = { "Content-Type": "application/json" };
+        res.writeHead(200, headers);
+        res.end(JSON.stringify(tables_1.attributeTable));
+        return [2 /*return*/];
+    });
+}); });
+app.get("/pixsols", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var headers;
+    return __generator(this, function (_a) {
+        headers = { "Content-Type": "application/json" };
+        res.writeHead(200, headers);
+        res.end(JSON.stringify(pixsols_1.default));
+        return [2 /*return*/];
+    });
+}); });
 app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var body, sequenced, headers;
     return __generator(this, function (_a) {
@@ -135,14 +159,13 @@ app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 
     });
 }); });
 app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var timeValidation, authority, connection, walletKeyPair, headers, body, signature, data, signer, verify, pixsolMint, fetched, newAttr, metadataKey, metadataAccount, pixsolData, metadata, gif, newUri, _a, instructions, tx;
+    var timeValidation, authority, connection, walletKeyPair, headers, body, signature, data, signer, verify, pixsolMint, fetched, memo, newAttrInfo, newAttrs, metadataKey, metadataAccount, pixsolData, metadata, gif, newUri, _a, instructions, tx;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
                 timeValidation = 1000 * 60;
                 authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
                 connection = (0, connection_1.getConnection)("mainnet-beta");
-                console.log(process.env);
                 walletKeyPair = anchor.web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(process.env.PRIVATE_KEY)));
                 headers = { "Content-Type": "application/json" };
                 body = req.body;
@@ -164,49 +187,57 @@ app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0
                 // VERIFICATION ON CHAIN FOR ATTR
                 //
                 console.log("###############################################");
-                return [4 /*yield*/, connection.getParsedConfirmedTransactions([data.params.tx])];
+                return [4 /*yield*/, (0, transactions_1.awaitParsedConfirmedTransactions)(data.params.tx, constants_1.DEFAULT_TIMEOUT, connection)];
             case 1:
-                fetched = (_b.sent())[0];
+                fetched = _b.sent();
+                console.log("fetched", fetched);
                 if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
                     res.writeHead(200, headers);
                     res.end(JSON.stringify({ error: "Invalid Tx" }));
                     return [2 /*return*/];
                 }
-                return [4 /*yield*/, fetched.transaction.message.instructions
-                        .map(function (element) {
-                        var _a;
-                        if (((_a = element === null || element === void 0 ? void 0 : element.parsed) === null || _a === void 0 ? void 0 : _a.type) === "transferChecked") {
-                            return element.parsed.info;
-                        }
-                    })
-                        .filter(function (tx) { return __awaiter(void 0, void 0, void 0, function () {
-                        var _a, _b;
-                        return __generator(this, function (_c) {
-                            switch (_c.label) {
-                                case 0:
-                                    _a = tx &&
-                                        tx.authority === authority &&
-                                        tx.tokenAmount.amount === 1;
-                                    if (!_a) return [3 /*break*/, 4];
-                                    return [4 /*yield*/, (0, accounts_1.getTokenWallet)((0, various_1.toPublicKey)(signer), (0, various_1.toPublicKey)(tx.mint))];
-                                case 1:
-                                    _b = (_c.sent()) ===
-                                        tx.source;
-                                    if (!_b) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, (0, accounts_1.getTokenWallet)((0, various_1.toPublicKey)(authority), (0, various_1.toPublicKey)(tx.mint))];
-                                case 2:
-                                    _b = (_c.sent());
-                                    _c.label = 3;
-                                case 3:
-                                    _a = (_b) === tx.destination;
-                                    _c.label = 4;
-                                case 4: return [2 /*return*/, _a];
-                            }
+                return [4 /*yield*/, fetched.transaction.message.instructions.reduce(function (acc, element) { return __awaiter(void 0, void 0, void 0, function () {
+                        var _a, _b, _c;
+                        return __generator(this, function (_d) {
+                            console.log(JSON.stringify(element, null, 2));
+                            if (element.program === "spl-memo")
+                                memo = element.parsed;
+                            if (((_a = element === null || element === void 0 ? void 0 : element.parsed) === null || _a === void 0 ? void 0 : _a.type) === "transferChecked" &&
+                                ((_c = (_b = element === null || element === void 0 ? void 0 : element.parsed) === null || _b === void 0 ? void 0 : _b.info) === null || _c === void 0 ? void 0 : _c.authority) === authority &&
+                                element.parsed.info.tokenAmount.amount === "1" //&&
+                            // ((await getTokenWallet(
+                            //   toPublicKey(signer),
+                            //   toPublicKey(element.parsed.info.mint)
+                            // )) === element.parsed.info.source &&
+                            //   (await getTokenWallet(
+                            //     toPublicKey(authority),
+                            //     toPublicKey(element.parsed.info.mint)
+                            //   ))) === element.parsed.info.destination
+                            )
+                                acc.push(element.parsed.info);
+                            return [2 /*return*/, acc];
                         });
-                    }); })];
+                    }); }, [])];
             case 2:
-                newAttr = _b.sent();
-                console.log(JSON.stringify(newAttr, null, 2));
+                newAttrInfo = _b.sent();
+                if (parseInt(memo) !== data.timestamp) {
+                    res.writeHead(200, headers);
+                    res.end(JSON.stringify({
+                        error: "Timestamp in Tx and in signature is not the same",
+                    }));
+                    return [2 /*return*/];
+                }
+                if (!newAttrInfo.length) {
+                    res.writeHead(200, headers);
+                    res.end(JSON.stringify({
+                        error: "No attributes found in the Tx",
+                    }));
+                    return [2 /*return*/];
+                }
+                newAttrs = newAttrInfo.map(function (attrInfo) {
+                    return (0, gif_1.getAttrFromMint)(attrInfo.mint);
+                });
+                console.log(newAttrs);
                 return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
             case 3:
                 metadataKey = _b.sent();
@@ -217,13 +248,14 @@ app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0
                 return [4 /*yield*/, axios_1.default.get(pixsolData.uri)];
             case 5:
                 metadata = (_b.sent()).data;
-                metadata.attributes = (0, dna_1.replaceAttr)(metadata.attributes, {
-                    trait_type: "Background",
-                    value: "Red",
-                });
+                metadata.attributes = newAttrs.reduce(function (acc, newAttr) {
+                    acc = (0, dna_1.replaceAttr)(acc, newAttr);
+                    return acc;
+                }, metadata.attributes);
                 return [4 /*yield*/, (0, gif_1.generateGif)(metadata.attributes)];
             case 6:
                 gif = _b.sent();
+                newUri = null;
                 _b.label = 7;
             case 7:
                 _b.trys.push([7, 9, , 10]);
@@ -247,10 +279,9 @@ app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0
             case 13:
                 tx = _b.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + tx.txid);
-                console.log("rename", pixsolData);
                 console.log("###############################################");
                 res.writeHead(200, headers);
-                res.end("ok");
+                res.end(JSON.stringify({ error: null, tx: tx.txid, mint: pixsolMint }));
                 return [2 /*return*/];
         }
     });

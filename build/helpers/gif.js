@@ -55,7 +55,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.update2Arweave = exports.generateGif = void 0;
+exports.update2Arweave = exports.generateGif = exports.getAttrFromMint = void 0;
 var canvas_1 = require("canvas");
 var merge_images_1 = __importDefault(require("merge-images"));
 var gif_encoder_2_1 = __importDefault(require("gif-encoder-2"));
@@ -147,6 +147,17 @@ var orderAttr = function (attr) {
         value: attr.find(function (a) { return a.trait_type === tables_1.attributeTable[id].name; }).value,
     }); });
 };
+var getAttrFromMint = function (mint) {
+    return tables_1.attributeTable.reduce(function (acc, val) {
+        if (val.items.find(function (x) { return x.mint === mint; }))
+            return {
+                trait_type: val.name,
+                value: val.items.find(function (x) { return x.mint === mint; }).name,
+            };
+        return acc;
+    }, null);
+};
+exports.getAttrFromMint = getAttrFromMint;
 var generateGif = function (unsequenced) { return __awaiter(void 0, void 0, void 0, function () {
     var basePath, images, b64;
     return __generator(this, function (_a) {

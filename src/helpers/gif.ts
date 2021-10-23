@@ -7,6 +7,7 @@ import FormData from "form-data";
 import { attributeTable } from "./tables";
 import { upload } from "./various";
 import { Attribute } from "../types";
+import { downloadFromS3 } from "./aws";
 
 async function createGif(b64: string, algorithm: string = "neuquant") {
   return new Promise<Buffer>(async (resolveMain) => {
@@ -77,10 +78,12 @@ export const getAttrFromMint = (mint: string): Attribute =>
   }, null);
 
 export const generateGif = async (unsequenced: Attribute[]) => {
-  const basePath = path.join(__dirname, "../../", "images/");
-  const images = orderAttr(unsequenced).map((attr) =>
-    path.join(basePath, attr.trait_type, `${attr.value}.png`)
+  const images = await Promise.all(
+    orderAttr(unsequenced).map((attr) =>
+      downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
+    )
   );
+  console.log(images);
   const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
   return await createGif(b64);
 };

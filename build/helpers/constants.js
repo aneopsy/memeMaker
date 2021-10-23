@@ -40,7 +40,7 @@ exports.CONFIG_ARRAY_START = 32 + // authority
     4; // max number of lines;
 exports.CONFIG_LINE_SIZE = 4 + 32 + 4 + 200;
 exports.CACHE_PATH = "./.cache";
-exports.DEFAULT_TIMEOUT = 15000;
+exports.DEFAULT_TIMEOUT = 30000;
 exports.EXTENSION_PNG = ".png";
 exports.EXTENSION_GIF = ".gif";
 exports.EXTENSION_JSON = ".json";
