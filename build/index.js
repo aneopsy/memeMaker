@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,135 +54,59 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __read = (this && this.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var canvas_1 = require("canvas");
-var merge_images_1 = __importDefault(require("merge-images"));
 var express_1 = __importDefault(require("express"));
-var path_1 = __importDefault(require("path"));
+var bs58_1 = __importDefault(require("bs58"));
+var nacl = __importStar(require("tweetnacl"));
+var axios_1 = __importDefault(require("axios"));
+var anchor = __importStar(require("@project-serum/anchor"));
+var connection_1 = require("./helpers/connection");
+var accounts_1 = require("./helpers/accounts");
+var various_1 = require("./helpers/various");
+var metadata_1 = require("./helpers/metadata");
+var gif_1 = require("./helpers/gif");
 var dna_1 = require("./helpers/dna");
-var tables_1 = require("./helpers/tables");
+var transactions_1 = require("./helpers/transactions");
 var app = (0, express_1.default)();
+app.use(express_1.default.json());
 var port = process.env.PORT || 8081;
-function createGif(file, fromFolder, toFolder, algorithm) {
-    if (algorithm === void 0) { algorithm = "neuquant"; }
-    return __awaiter(this, void 0, void 0, function () {
-        var _this = this;
-        return __generator(this, function (_a) {
-            return [2 /*return*/, new Promise(function (resolveMain) { return __awaiter(_this, void 0, void 0, function () {
-                    var _a, width, height, canvas2, ctx2, parts, img, dstPath, writeStream, encoder, canvas, ctx, _loop_1, i;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0: return [4 /*yield*/, new Promise(function (resolve) {
-                                    var image = new canvas_1.Image();
-                                    image.onload = function () { return resolve([image.width, image.height]); };
-                                    image.src = path_1.default.join(fromFolder, file + ".png");
-                                })];
-                            case 1:
-                                _a = __read.apply(void 0, [_b.sent(), 2]), width = _a[0], height = _a[1];
-                                canvas2 = (0, canvas_1.createCanvas)(height, height);
-                                ctx2 = canvas2.getContext("2d");
-                                parts = [];
-                                img = new canvas_1.Image();
-                                img.onload = function () {
-                                    var w2 = img.width / 12;
-                                    for (var i = 0; i < 12; i++) {
-                                        var x = w2 * i;
-                                        canvas2.width = height;
-                                        canvas2.height = height;
-                                        ctx2.drawImage(img, x, 0, height, height, 0, 0, height, height);
-                                        parts.push(canvas2.toDataURL());
-                                    }
-                                };
-                                img.src = path_1.default.join(fromFolder, file + ".png");
-                                dstPath = path_1.default.join(toFolder, file + ".gif");
-                                writeStream = fs.createWriteStream(dstPath);
-                                writeStream.on("close", function () {
-                                    resolveMain();
-                                });
-                                encoder = new GIFEncoder(height, height, algorithm, true, 12);
-                                encoder.createReadStream().pipe(writeStream);
-                                encoder.start();
-                                encoder.setDelay(100);
-                                encoder.setQuality(30);
-                                canvas = (0, canvas_1.createCanvas)(height, height);
-                                ctx = canvas.getContext("2d");
-                                _loop_1 = function (i) {
-                                    return __generator(this, function (_c) {
-                                        switch (_c.label) {
-                                            case 0: return [4 /*yield*/, new Promise(function (resolve) {
-                                                    var image = new canvas_1.Image();
-                                                    image.onload = function () {
-                                                        ctx.drawImage(image, 0, 0);
-                                                        encoder.addFrame(ctx);
-                                                        resolve();
-                                                    };
-                                                    image.src = parts[i];
-                                                })];
-                                            case 1:
-                                                _c.sent();
-                                                return [2 /*return*/];
-                                        }
-                                    });
-                                };
-                                i = 0;
-                                _b.label = 2;
-                            case 2:
-                                if (!(i < 12)) return [3 /*break*/, 5];
-                                return [5 /*yield**/, _loop_1(i)];
-                            case 3:
-                                _b.sent();
-                                _b.label = 4;
-                            case 4:
-                                i++;
-                                return [3 /*break*/, 2];
-                            case 5:
-                                encoder.finish();
-                                return [2 /*return*/];
-                        }
-                    });
-                }); })];
-        });
-    });
-}
 app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var params, dna, unsequenced, order, basePath, images, b64, img, headers;
+    var params, dna, gif;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
-                unsequenced = (0, dna_1.unsequence)(dna);
-                order = [0, 1, 6, 5, 4, 3, 2];
-                basePath = path_1.default.join(__dirname, "../", "images/");
-                images = order.map(function (id) {
-                    return path_1.default.join(basePath, tables_1.attributeTable[id].name, unsequenced[id].value + ".png");
-                });
-                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+                return [4 /*yield*/, (0, gif_1.generateGif)((0, dna_1.unsequence)(dna))];
             case 1:
-                b64 = _a.sent();
-                img = Buffer.from(b64.replace(/^data:image\/png;base64,/, ""), "base64");
-                headers = { "Content-Type": "image/png", "Content-Length": img.length };
-                res.writeHead(200, headers);
-                res.end(img);
+                gif = _a.sent();
+                res.writeHead(200, {
+                    "Content-Type": "image/gif",
+                    "Content-Length": gif.length,
+                });
+                res.end(gif);
+                return [2 /*return*/];
+        }
+    });
+}); });
+app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var body, sequenced, gif;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                body = req.body;
+                sequenced = (0, dna_1.sequence)(body);
+                return [4 /*yield*/, (0, gif_1.generateGif)((0, dna_1.unsequence)(sequenced))];
+            case 1:
+                gif = _a.sent();
+                res.writeHead(200, {
+                    "Content-Type": "image/gif",
+                    "Content-Length": gif.length,
+                });
+                res.end(gif);
                 return [2 /*return*/];
         }
     });
@@ -180,6 +123,141 @@ app.get("/decode/:dna", function (req, res) { return __awaiter(void 0, void 0, v
         return [2 /*return*/];
     });
 }); });
+app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var body, sequenced, headers;
+    return __generator(this, function (_a) {
+        body = req.body;
+        sequenced = (0, dna_1.sequence)(body);
+        headers = { "Content-Type": "application/json" };
+        res.writeHead(200, headers);
+        res.end(JSON.stringify(sequenced));
+        return [2 /*return*/];
+    });
+}); });
+app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var timeValidation, authority, connection, walletKeyPair, headers, body, signature, data, signer, verify, pixsolMint, fetched, newAttr, metadataKey, metadataAccount, pixsolData, metadata, gif, newUri, _a, instructions, tx;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                timeValidation = 1000 * 60;
+                authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
+                connection = (0, connection_1.getConnection)("mainnet-beta");
+                console.log(process.env);
+                walletKeyPair = anchor.web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(process.env.PRIVATE_KEY)));
+                headers = { "Content-Type": "application/json" };
+                body = req.body;
+                signature = body.signature, data = body.data, signer = body.signer;
+                verify = nacl.sign.detached.verify(new TextEncoder().encode(JSON.stringify(data)), bs58_1.default.decode(signature), bs58_1.default.decode(signer));
+                if (!verify) {
+                    res.writeHead(200, headers);
+                    res.end(JSON.stringify({ error: "Invalid signature" }));
+                    return [2 /*return*/];
+                }
+                if (data.timestamp + timeValidation < Date.now()) {
+                    res.writeHead(200, headers);
+                    res.end(JSON.stringify({ error: "Request is outdated" }));
+                    return [2 /*return*/];
+                }
+                pixsolMint = data.params.address;
+                console.log("pixsolAddr", pixsolMint);
+                //
+                // VERIFICATION ON CHAIN FOR ATTR
+                //
+                console.log("###############################################");
+                return [4 /*yield*/, connection.getParsedConfirmedTransactions([data.params.tx])];
+            case 1:
+                fetched = (_b.sent())[0];
+                if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
+                    res.writeHead(200, headers);
+                    res.end(JSON.stringify({ error: "Invalid Tx" }));
+                    return [2 /*return*/];
+                }
+                return [4 /*yield*/, fetched.transaction.message.instructions
+                        .map(function (element) {
+                        var _a;
+                        if (((_a = element === null || element === void 0 ? void 0 : element.parsed) === null || _a === void 0 ? void 0 : _a.type) === "transferChecked") {
+                            return element.parsed.info;
+                        }
+                    })
+                        .filter(function (tx) { return __awaiter(void 0, void 0, void 0, function () {
+                        var _a, _b;
+                        return __generator(this, function (_c) {
+                            switch (_c.label) {
+                                case 0:
+                                    _a = tx &&
+                                        tx.authority === authority &&
+                                        tx.tokenAmount.amount === 1;
+                                    if (!_a) return [3 /*break*/, 4];
+                                    return [4 /*yield*/, (0, accounts_1.getTokenWallet)((0, various_1.toPublicKey)(signer), (0, various_1.toPublicKey)(tx.mint))];
+                                case 1:
+                                    _b = (_c.sent()) ===
+                                        tx.source;
+                                    if (!_b) return [3 /*break*/, 3];
+                                    return [4 /*yield*/, (0, accounts_1.getTokenWallet)((0, various_1.toPublicKey)(authority), (0, various_1.toPublicKey)(tx.mint))];
+                                case 2:
+                                    _b = (_c.sent());
+                                    _c.label = 3;
+                                case 3:
+                                    _a = (_b) === tx.destination;
+                                    _c.label = 4;
+                                case 4: return [2 /*return*/, _a];
+                            }
+                        });
+                    }); })];
+            case 2:
+                newAttr = _b.sent();
+                console.log(JSON.stringify(newAttr, null, 2));
+                return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
+            case 3:
+                metadataKey = _b.sent();
+                return [4 /*yield*/, connection.getAccountInfo(metadataKey)];
+            case 4:
+                metadataAccount = _b.sent();
+                pixsolData = (0, metadata_1.decodeMetadata)(metadataAccount.data).data;
+                return [4 /*yield*/, axios_1.default.get(pixsolData.uri)];
+            case 5:
+                metadata = (_b.sent()).data;
+                metadata.attributes = (0, dna_1.replaceAttr)(metadata.attributes, {
+                    trait_type: "Background",
+                    value: "Red",
+                });
+                return [4 /*yield*/, (0, gif_1.generateGif)(metadata.attributes)];
+            case 6:
+                gif = _b.sent();
+                _b.label = 7;
+            case 7:
+                _b.trys.push([7, 9, , 10]);
+                return [4 /*yield*/, (0, gif_1.update2Arweave)(metadata, gif)];
+            case 8:
+                newUri = _b.sent();
+                return [3 /*break*/, 10];
+            case 9:
+                _a = _b.sent();
+                return [3 /*break*/, 10];
+            case 10:
+                if (!newUri) return [3 /*break*/, 7];
+                _b.label = 11;
+            case 11:
+                pixsolData.uri = newUri;
+                instructions = [];
+                return [4 /*yield*/, (0, metadata_1.updateMetadata)(pixsolData, undefined, undefined, pixsolMint, walletKeyPair.publicKey.toBase58(), instructions, metadataKey.toBase58())];
+            case 12:
+                _b.sent();
+                return [4 /*yield*/, (0, transactions_1.sendTransactionWithRetryWithKeypair)(connection, walletKeyPair, instructions, [], "confirmed")];
+            case 13:
+                tx = _b.sent();
+                console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + tx.txid);
+                console.log("rename", pixsolData);
+                console.log("###############################################");
+                res.writeHead(200, headers);
+                res.end("ok");
+                return [2 /*return*/];
+        }
+    });
+}); });
+//
+// OTHERS
+//
 app.get("/", function (req, res) { return res.send("You have reached the Pixsols Generator"); });
 app.listen(port, function () {
     console.log("Pixsols Generator listening at on port " + port);

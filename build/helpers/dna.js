@@ -25,7 +25,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unsequence = exports.buf2bin = exports.buf2hex = exports.hex2buff = void 0;
+exports.replaceAttr = exports.sequence = exports.unsequence = exports.buf2bin = exports.buf2hex = exports.hex2buff = void 0;
 var tables_1 = require("./tables");
 function hex2buff(hexString) {
     hexString = hexString.replace(/^0x/, "");
@@ -64,4 +64,24 @@ var unsequence = function (sequence) {
     }, []);
 };
 exports.unsequence = unsequence;
+var sequence = function (object) {
+    return buf2hex(object.reduce(function (acc, id) {
+        if (tables_1.attributeTable.find(function (attr) { return attr.name === id.trait_type; }))
+            acc.push(tables_1.attributeTable
+                .find(function (attr) { return attr.name === id.trait_type; })
+                .items.find(function (trait) { return trait.name === id.value; }).id);
+        return acc;
+    }, []));
+};
+exports.sequence = sequence;
+var replaceAttr = function (attrs, attr) {
+    return attrs.reduce(function (acc, val) {
+        if (val.trait_type === attr.trait_type)
+            acc.push(attr);
+        else
+            acc.push(val);
+        return acc;
+    }, []);
+};
+exports.replaceAttr = replaceAttr;
 //# sourceMappingURL=dna.js.map

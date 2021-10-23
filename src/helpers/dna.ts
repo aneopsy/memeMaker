@@ -1,3 +1,4 @@
+import { Attribute } from "../types";
 import { attributeTable } from "./tables";
 
 export function hex2buff(hexString) {
@@ -31,7 +32,7 @@ export function buf2bin(buffer: number[]) {
     .join("");
 }
 
-export const unsequence = (sequence: string): any[] =>
+export const unsequence = (sequence: string): Attribute[] =>
   hex2buff(sequence).reduce((acc, id, index): any => {
     acc.push({
       trait_type: Object.values(attributeTable)[index].name,
@@ -45,11 +46,19 @@ export const unsequence = (sequence: string): any[] =>
 export const sequence = (object: any[]): string =>
   buf2hex(
     object.reduce((acc: number[], id: any): number[] => {
-      acc.push(
-        attributeTable
-          .find((attr) => attr.name === id.trait_type)
-          .items.find((trait) => trait.name === id.value).id as number
-      );
+      if (attributeTable.find((attr) => attr.name === id.trait_type))
+        acc.push(
+          attributeTable
+            .find((attr) => attr.name === id.trait_type)
+            .items.find((trait) => trait.name === id.value).id as number
+        );
       return acc;
     }, [])
   );
+
+export const replaceAttr = (attrs: Attribute[], attr: Attribute): Attribute[] =>
+  attrs.reduce((acc: Attribute[], val) => {
+    if (val.trait_type === attr.trait_type) acc.push(attr);
+    else acc.push(val);
+    return acc;
+  }, []);
