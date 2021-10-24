@@ -86,7 +86,7 @@ app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void
             case 0:
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
-                return [4 /*yield*/, (0, gif_1.generateGif)((0, dna_1.unsequence)(dna))];
+                return [4 /*yield*/, (0, gif_1.generateGif)(dna)];
             case 1:
                 gif = _a.sent();
                 res.writeHead(200, {
@@ -98,6 +98,52 @@ app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void
         }
     });
 }); });
+app.get("/sample/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var params, dna, png, _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                params = req.params;
+                dna = params === null || params === void 0 ? void 0 : params.dna;
+                _b = (_a = Buffer).from;
+                return [4 /*yield*/, (0, gif_1.generateSample)(dna)];
+            case 1:
+                png = _b.apply(_a, [(_c.sent())
+                        .toString()
+                        .replace(/^data:image\/(png|jpeg|jpg);base64,/, ""),
+                    "base64"]);
+                res.writeHead(200, {
+                    "Content-Type": "image/png",
+                    "Content-Length": png.length,
+                });
+                res.end(png);
+                return [2 /*return*/];
+        }
+    });
+}); });
+app.get("/sample/crop/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var params, dna, png, _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                params = req.params;
+                dna = params === null || params === void 0 ? void 0 : params.dna;
+                _b = (_a = Buffer).from;
+                return [4 /*yield*/, (0, gif_1.generateCrop)(dna)];
+            case 1:
+                png = _b.apply(_a, [(_c.sent())
+                        .toString()
+                        .replace(/^data:image\/(png|jpeg|jpg);base64,/, ""),
+                    "base64"]);
+                res.writeHead(200, {
+                    "Content-Type": "image/png",
+                    "Content-Length": png.length,
+                });
+                res.end(png);
+                return [2 /*return*/];
+        }
+    });
+}); });
 app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var body, sequenced, gif;
     return __generator(this, function (_a) {
@@ -105,7 +151,7 @@ app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, 
             case 0:
                 body = req.body;
                 sequenced = (0, dna_1.sequence)(body);
-                return [4 /*yield*/, (0, gif_1.generateGif)((0, dna_1.unsequence)(sequenced))];
+                return [4 /*yield*/, (0, gif_1.generateGif)(sequenced)];
             case 1:
                 gif = _a.sent();
                 res.writeHead(200, {

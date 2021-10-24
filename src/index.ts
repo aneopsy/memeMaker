@@ -1,6 +1,7 @@
 import { Canvas, createCanvas, Image } from "canvas";
 import mergeImages from "merge-images";
 import express from "express";
+import cors from "cors";
 import path from "path";
 import bs58 from "bs58";
 import * as nacl from "tweetnacl";
@@ -34,6 +35,7 @@ log.setLevel("info");
 
 require("dotenv").config();
 const app = express();
+app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 8081;
 

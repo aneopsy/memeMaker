@@ -91,6 +91,16 @@ exports.attributeTable = [
                 mint: null,
                 name: "Valleyside",
             },
+            {
+                id: 65534,
+                mint: null,
+                name: "Dark",
+            },
+            {
+                id: 65535,
+                mint: null,
+                name: "Blank",
+            },
         ],
     },
     {
@@ -497,7 +507,7 @@ exports.attributeTable = [
             },
             {
                 id: 22,
-                mint: "4GeGeXY34nFdjS9EmPiHVdcbB9RKz3EX64ciVLJ69AXG",
+                mint: null,
                 name: "Penetrator",
             },
         ],

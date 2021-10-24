@@ -39,9 +39,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.downloadFromS3 = void 0;
+exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = void 0;
 var aws_sdk_1 = __importDefault(require("aws-sdk"));
-function downloadFromS3(attachmentId) {
+function downloadAttrS3(attachmentId) {
     return __awaiter(this, void 0, void 0, function () {
         var s3, file;
         return __generator(this, function (_a) {
@@ -50,7 +50,7 @@ function downloadFromS3(attachmentId) {
                     s3 = new aws_sdk_1.default.S3();
                     return [4 /*yield*/, s3
                             .getObject({
-                            Bucket: "pixsols-images",
+                            Bucket: "pixsols-attributes",
                             Key: attachmentId, // path to the object you're looking for
                         })
                             .promise()];
@@ -61,5 +61,64 @@ function downloadFromS3(attachmentId) {
         });
     });
 }
-exports.downloadFromS3 = downloadFromS3;
+exports.downloadAttrS3 = downloadAttrS3;
+function downloadImageS3(attachmentId) {
+    return __awaiter(this, void 0, void 0, function () {
+        var s3, file, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    s3 = new aws_sdk_1.default.S3();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, s3
+                            .getObject({
+                            Bucket: "pixsols-images",
+                            Key: attachmentId,
+                        })
+                            .promise()];
+                case 2:
+                    file = _a.sent();
+                    console.log("File downloaded successfully");
+                    return [2 /*return*/, file.Body];
+                case 3:
+                    err_1 = _a.sent();
+                    throw err_1;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.downloadImageS3 = downloadImageS3;
+function uploadImageS3(file, key) {
+    return __awaiter(this, void 0, void 0, function () {
+        var s3, data, s3Err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    s3 = new aws_sdk_1.default.S3();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, s3
+                            .upload({
+                            Bucket: "pixsols-images",
+                            Key: key,
+                            Body: file,
+                        })
+                            .promise()];
+                case 2:
+                    data = _a.sent();
+                    console.log("File uploaded successfully at " + data.Location);
+                    return [3 /*break*/, 4];
+                case 3:
+                    s3Err_1 = _a.sent();
+                    throw s3Err_1;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.uploadImageS3 = uploadImageS3;
 //# sourceMappingURL=aws.js.map

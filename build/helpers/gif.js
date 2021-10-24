@@ -55,7 +55,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.update2Arweave = exports.generateGif = exports.getAttrFromMint = void 0;
+exports.update2Arweave = exports.generateCrop = exports.generateSample = exports.generateGif = exports.getAttrFromMint = void 0;
 var canvas_1 = require("canvas");
 var merge_images_1 = __importDefault(require("merge-images"));
 var gif_encoder_2_1 = __importDefault(require("gif-encoder-2"));
@@ -65,6 +65,7 @@ var form_data_1 = __importDefault(require("form-data"));
 var tables_1 = require("./tables");
 var various_1 = require("./various");
 var aws_1 = require("./aws");
+var dna_1 = require("./dna");
 function createGif(b64, algorithm) {
     if (algorithm === void 0) { algorithm = "neuquant"; }
     return __awaiter(this, void 0, void 0, function () {
@@ -141,6 +142,125 @@ function createGif(b64, algorithm) {
         });
     });
 }
+function createSample(b64) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _this = this;
+        return __generator(this, function (_a) {
+            return [2 /*return*/, new Promise(function (resolveMain) { return __awaiter(_this, void 0, void 0, function () {
+                    var _a, _, height, canvas2, ctx2, img;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, new Promise(function (resolve) {
+                                    var image = new canvas_1.Image();
+                                    image.onload = function () { return resolve([image.width, image.height]); };
+                                    image.src = b64;
+                                })];
+                            case 1:
+                                _a = __read.apply(void 0, [_b.sent(), 2]), _ = _a[0], height = _a[1];
+                                canvas2 = (0, canvas_1.createCanvas)(height, height);
+                                ctx2 = canvas2.getContext("2d");
+                                img = new canvas_1.Image();
+                                img.onload = function () {
+                                    canvas2.width = height;
+                                    canvas2.height = height;
+                                    ctx2.drawImage(img, 0, 0, height, height, 0, 0, height, height);
+                                    resolveMain(canvas2.toDataURL());
+                                };
+                                img.src = b64;
+                                return [2 /*return*/];
+                        }
+                    });
+                }); })];
+        });
+    });
+}
+function removeImageBlanks(imageObject) {
+    var imgWidth = imageObject.width;
+    var imgHeight = imageObject.height;
+    var canvas = (0, canvas_1.createCanvas)(imgWidth, imgHeight);
+    var context = canvas.getContext("2d");
+    context.drawImage(imageObject, 0, 0);
+    var imageData = context.getImageData(0, 0, imgWidth, imgHeight), data = imageData.data, getRBG = function (x, y) {
+        var offset = imgWidth * y + x;
+        return {
+            red: data[offset * 4],
+            green: data[offset * 4 + 1],
+            blue: data[offset * 4 + 2],
+            opacity: data[offset * 4 + 3],
+        };
+    }, isWhite = function (rgb) {
+        return (rgb.opacity === 0 ||
+            (rgb.red > 200 && rgb.green > 200 && rgb.blue > 200));
+    }, scanY = function (fromTop) {
+        var offset = fromTop ? 1 : -1;
+        // loop through each row
+        for (var y = fromTop ? 0 : imgHeight - 1; fromTop ? y < imgHeight : y > -1; y += offset) {
+            // loop through each column
+            for (var x = 0; x < imgWidth; x++) {
+                var rgb = getRBG(x, y);
+                if (!isWhite(rgb)) {
+                    if (fromTop) {
+                        return y;
+                    }
+                    else {
+                        return Math.min(y + 1, imgHeight);
+                    }
+                }
+            }
+        }
+        return null; // all image is white
+    }, scanX = function (fromLeft) {
+        var offset = fromLeft ? 1 : -1;
+        // loop through each column
+        for (var x = fromLeft ? 0 : imgWidth - 1; fromLeft ? x < imgWidth : x > -1; x += offset) {
+            // loop through each row
+            for (var y = 0; y < imgHeight; y++) {
+                var rgb = getRBG(x, y);
+                if (!isWhite(rgb)) {
+                    if (fromLeft) {
+                        return x;
+                    }
+                    else {
+                        return Math.min(x + 1, imgWidth);
+                    }
+                }
+            }
+        }
+        return null; // all image is white
+    };
+    var cropTop = scanY(true), cropBottom = scanY(false), cropLeft = scanX(true), cropRight = scanX(false), cropWidth = cropRight - cropLeft, cropHeight = cropBottom - cropTop;
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    // finally crop the guy
+    canvas
+        .getContext("2d")
+        .drawImage(imageObject, cropLeft, cropTop, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    return canvas.toDataURL();
+}
+function createCrop(b64) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _this = this;
+        return __generator(this, function (_a) {
+            return [2 /*return*/, new Promise(function (resolveMain) { return __awaiter(_this, void 0, void 0, function () {
+                    var img, _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                img = new canvas_1.Image();
+                                img.onload = function () {
+                                    resolveMain(removeImageBlanks(img));
+                                };
+                                _a = img;
+                                return [4 /*yield*/, createSample(b64)];
+                            case 1:
+                                _a.src = _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
+                }); })];
+        });
+    });
+}
 var orderAttr = function (attr) {
     var order = [0, 1, 6, 5, 4, 3, 2];
     return order.map(function (id) { return ({
@@ -159,24 +279,102 @@ var getAttrFromMint = function (mint) {
     }, null);
 };
 exports.getAttrFromMint = getAttrFromMint;
-var generateGif = function (unsequenced) { return __awaiter(void 0, void 0, void 0, function () {
-    var images, b64;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
-                    return (0, aws_1.downloadFromS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
-                }))];
-            case 1:
-                images = _a.sent();
-                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+var generateGif = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, _b, _c, unsequenced, images, b64, gif;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
+            case 0:
+                _d.trys.push([0, 2, , 7]);
+                _b = (_a = Buffer).from;
+                return [4 /*yield*/, (0, aws_1.downloadImageS3)("gif/" + dna + ".gif")];
+            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
             case 2:
-                b64 = _a.sent();
+                _c = _d.sent();
+                unsequenced = (0, dna_1.unsequence)(dna);
+                return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
+                        return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
+                    }))];
+            case 3:
+                images = _d.sent();
+                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+            case 4:
+                b64 = _d.sent();
                 return [4 /*yield*/, createGif(b64)];
-            case 3: return [2 /*return*/, _a.sent()];
+            case 5:
+                gif = _d.sent();
+                return [4 /*yield*/, (0, aws_1.uploadImageS3)(gif, "gif/" + dna + ".gif")];
+            case 6:
+                _d.sent();
+                return [2 /*return*/, gif];
+            case 7: return [2 /*return*/];
         }
     });
 }); };
 exports.generateGif = generateGif;
+var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, _b, _c, unsequenced, images, b64, sample;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
+            case 0:
+                _d.trys.push([0, 2, , 7]);
+                _b = (_a = Buffer).from;
+                return [4 /*yield*/, (0, aws_1.downloadImageS3)("sample/" + dna + ".png")];
+            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
+            case 2:
+                _c = _d.sent();
+                unsequenced = (0, dna_1.unsequence)(dna);
+                return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
+                        return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
+                    }))];
+            case 3:
+                images = _d.sent();
+                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+            case 4:
+                b64 = _d.sent();
+                return [4 /*yield*/, createSample(b64)];
+            case 5:
+                sample = _d.sent();
+                return [4 /*yield*/, (0, aws_1.uploadImageS3)(sample, "sample/" + dna + ".png")];
+            case 6:
+                _d.sent();
+                return [2 /*return*/, sample];
+            case 7: return [2 /*return*/];
+        }
+    });
+}); };
+exports.generateSample = generateSample;
+var generateCrop = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, _b, _c, unsequenced, images, b64, crop;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
+            case 0:
+                _d.trys.push([0, 2, , 7]);
+                _b = (_a = Buffer).from;
+                return [4 /*yield*/, (0, aws_1.downloadImageS3)("crop/" + dna + ".png")];
+            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
+            case 2:
+                _c = _d.sent();
+                unsequenced = (0, dna_1.unsequence)(dna);
+                return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
+                        return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
+                    }))];
+            case 3:
+                images = _d.sent();
+                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+            case 4:
+                b64 = _d.sent();
+                return [4 /*yield*/, createCrop(b64)];
+            case 5:
+                crop = _d.sent();
+                return [4 /*yield*/, (0, aws_1.uploadImageS3)(crop, "crop/" + dna + ".png")];
+            case 6:
+                _d.sent();
+                return [2 /*return*/, crop];
+            case 7: return [2 /*return*/];
+        }
+    });
+}); };
+exports.generateCrop = generateCrop;
 var update2Arweave = function (manifest, image) { return __awaiter(void 0, void 0, void 0, function () {
     var data, uri, metadataFile, resp, resp2, _a;
     var _b;
