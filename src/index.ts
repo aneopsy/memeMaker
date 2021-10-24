@@ -12,6 +12,7 @@ import { getMetadata, getTokenWallet } from "./helpers/accounts";
 import { toPublicKey } from "./helpers/various";
 import { decodeMetadata, updateMetadata } from "./helpers/metadata";
 import {
+  generateCrop,
   generateGif,
   generateSample,
   getAttrFromMint,
@@ -51,9 +52,26 @@ app.get("/gif/:dna", async (req, res) => {
 app.get("/sample/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
-  console.log(dna);
   const png = Buffer.from(
     (await generateSample(unsequence(dna))).replace(
+      /^data:image\/(png|jpeg|jpg);base64,/,
+      ""
+    ),
+    "base64"
+  );
+
+  res.writeHead(200, {
+    "Content-Type": "image/png",
+    "Content-Length": png.length,
+  });
+  res.end(png);
+});
+
+app.get("/crop/:dna", async (req, res) => {
+  const { params } = req;
+  const dna = params?.dna;
+  const png = Buffer.from(
+    (await generateCrop(unsequence(dna))).replace(
       /^data:image\/(png|jpeg|jpg);base64,/,
       ""
     ),

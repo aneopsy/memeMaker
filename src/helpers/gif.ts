@@ -78,7 +78,113 @@ async function createSample(b64: string) {
       resolveMain(canvas2.toDataURL());
     };
     img.src = b64;
-    console.log(b64);
+  });
+}
+
+function removeImageBlanks(imageObject) {
+  const imgWidth = imageObject.width;
+  const imgHeight = imageObject.height;
+  var canvas = createCanvas(imgWidth, imgHeight);
+  var context = canvas.getContext("2d");
+  context.drawImage(imageObject, 0, 0);
+
+  var imageData = context.getImageData(0, 0, imgWidth, imgHeight),
+    data = imageData.data,
+    getRBG = function (x, y) {
+      var offset = imgWidth * y + x;
+      return {
+        red: data[offset * 4],
+        green: data[offset * 4 + 1],
+        blue: data[offset * 4 + 2],
+        opacity: data[offset * 4 + 3],
+      };
+    },
+    isWhite = function (rgb) {
+      // many images contain noise, as the white is not a pure #fff white
+      return rgb.red > 200 && rgb.green > 200 && rgb.blue > 200;
+    },
+    scanY = function (fromTop) {
+      var offset = fromTop ? 1 : -1;
+
+      // loop through each row
+      for (
+        var y = fromTop ? 0 : imgHeight - 1;
+        fromTop ? y < imgHeight : y > -1;
+        y += offset
+      ) {
+        // loop through each column
+        for (var x = 0; x < imgWidth; x++) {
+          var rgb = getRBG(x, y);
+          if (!isWhite(rgb)) {
+            if (fromTop) {
+              return y;
+            } else {
+              return Math.min(y + 1, imgHeight);
+            }
+          }
+        }
+      }
+      return null; // all image is white
+    },
+    scanX = function (fromLeft) {
+      var offset = fromLeft ? 1 : -1;
+
+      // loop through each column
+      for (
+        var x = fromLeft ? 0 : imgWidth - 1;
+        fromLeft ? x < imgWidth : x > -1;
+        x += offset
+      ) {
+        // loop through each row
+        for (var y = 0; y < imgHeight; y++) {
+          var rgb = getRBG(x, y);
+          if (!isWhite(rgb)) {
+            if (fromLeft) {
+              return x;
+            } else {
+              return Math.min(x + 1, imgWidth);
+            }
+          }
+        }
+      }
+      return null; // all image is white
+    };
+
+  var cropTop = scanY(true),
+    cropBottom = scanY(false),
+    cropLeft = scanX(true),
+    cropRight = scanX(false),
+    cropWidth = cropRight - cropLeft,
+    cropHeight = cropBottom - cropTop;
+
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
+  // finally crop the guy
+  canvas
+    .getContext("2d")
+    .drawImage(
+      imageObject,
+      cropLeft,
+      cropTop,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      cropWidth,
+      cropHeight
+    );
+
+  return canvas.toDataURL();
+}
+
+async function createCrop(b64: string) {
+  return new Promise<string>(async (resolveMain) => {
+    const img = new Image();
+
+    img.onload = () => {
+      resolveMain(removeImageBlanks(img));
+    };
+    img.src = await createSample(b64);
   });
 }
 
@@ -118,6 +224,16 @@ export const generateSample = async (unsequenced: Attribute[]) => {
   );
   const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
   return await createSample(b64);
+};
+
+export const generateCrop = async (unsequenced: Attribute[]) => {
+  const images = await Promise.all(
+    orderAttr(unsequenced).map((attr) =>
+      downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
+    )
+  );
+  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+  return await createCrop(b64);
 };
 
 export const update2Arweave = async (manifest: any, image: Buffer) => {
