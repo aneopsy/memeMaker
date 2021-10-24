@@ -51,7 +51,7 @@ app.get("/gif/:dna", async (req, res) => {
 app.get("/sample/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
-
+  console.log(dna);
   const png = Buffer.from(
     (await generateSample(unsequence(dna))).replace(
       /^data:image\/(png|jpeg|jpg);base64,/,

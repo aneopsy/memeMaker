@@ -72,12 +72,13 @@ async function createSample(b64: string) {
     const img = new Image();
 
     img.onload = () => {
-      var w2 = img.width / 12;
       canvas2.width = height;
       canvas2.height = height;
       ctx2.drawImage(img, 0, 0, height, height, 0, 0, height, height);
       resolveMain(canvas2.toDataURL());
     };
+    img.src = b64;
+    console.log(b64);
   });
 }
 
