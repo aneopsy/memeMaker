@@ -49,27 +49,17 @@ var allowCrossDomain = function (req, res, next) {
     next();
   }
 };
+
 app.configure(function () {
   app.use(allowCrossDomain);
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(app.router);
+  // app.use(express.bodyParser());
+  // app.use(express.methodOverride());
+  // app.use(app.router);
   // app.use(express.static(path.join(application_root, "public")));
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+  // app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
   app.use(express.json());
 });
-// app.use(express.json());
-// app.use(function (req, res, next) {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header("Access-Control-Allow-Credentials", true);
-//   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
-//   res.header(
-//     "Access-Control-Allow-Headers",
-//     "Origin,X-Requested-With,Content-Type,Accept,content-type,application/json"
-//   );
-//   next();
-//   express.json();
-// });
+
 const port = process.env.PORT || 8081;
 
 app.get("/gif/:dna", async (req, res) => {
