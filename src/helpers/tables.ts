@@ -504,7 +504,7 @@ export const attributeTable = [
       },
       {
         id: 22,
-        mint: "4GeGeXY34nFdjS9EmPiHVdcbB9RKz3EX64ciVLJ69AXG",
+        mint: null,
         name: "Penetrator",
       },
     ],
