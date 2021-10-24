@@ -89,6 +89,11 @@ export const attributeTable = [
         name: "Valleyside",
       },
       {
+        id: 65534,
+        mint: null,
+        name: "Dark",
+      },
+      {
         id: 65535,
         mint: null,
         name: "Blank",
