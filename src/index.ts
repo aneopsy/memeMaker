@@ -66,7 +66,7 @@ app.get("/sample/:dna", async (req, res) => {
   res.end(png);
 });
 
-app.get("/crop/:dna", async (req, res) => {
+app.get("/sample/crop/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
   const png = Buffer.from(
