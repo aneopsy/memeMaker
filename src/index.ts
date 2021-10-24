@@ -11,7 +11,12 @@ import { getConnection } from "./helpers/connection";
 import { getMetadata, getTokenWallet } from "./helpers/accounts";
 import { toPublicKey } from "./helpers/various";
 import { decodeMetadata, updateMetadata } from "./helpers/metadata";
-import { generateGif, getAttrFromMint, update2Arweave } from "./helpers/gif";
+import {
+  generateGif,
+  generateSample,
+  getAttrFromMint,
+  update2Arweave,
+} from "./helpers/gif";
 import { replaceAttr, sequence, unsequence } from "./helpers/dna";
 import {
   awaitParsedConfirmedTransactions,
@@ -41,6 +46,25 @@ app.get("/gif/:dna", async (req, res) => {
     "Content-Length": gif.length,
   });
   res.end(gif);
+});
+
+app.get("/sample/:dna", async (req, res) => {
+  const { params } = req;
+  const dna = params?.dna;
+
+  const png = Buffer.from(
+    (await generateSample(unsequence(dna))).replace(
+      /^data:image\/(png|jpeg|jpg);base64,/,
+      ""
+    ),
+    "base64"
+  );
+
+  res.writeHead(200, {
+    "Content-Type": "image/png",
+    "Content-Length": png.length,
+  });
+  res.end(png);
 });
 
 app.post("/gif", async (req, res) => {
