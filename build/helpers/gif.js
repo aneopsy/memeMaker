@@ -64,6 +64,7 @@ var axios_1 = __importDefault(require("axios"));
 var form_data_1 = __importDefault(require("form-data"));
 var tables_1 = require("./tables");
 var various_1 = require("./various");
+var aws_1 = require("./aws");
 function createGif(b64, algorithm) {
     if (algorithm === void 0) { algorithm = "neuquant"; }
     return __awaiter(this, void 0, void 0, function () {
@@ -159,19 +160,19 @@ var getAttrFromMint = function (mint) {
 };
 exports.getAttrFromMint = getAttrFromMint;
 var generateGif = function (unsequenced) { return __awaiter(void 0, void 0, void 0, function () {
-    var basePath, images, b64;
+    var images, b64;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
-                basePath = path_1.default.join(__dirname, "../../", "images/");
-                images = orderAttr(unsequenced).map(function (attr) {
-                    return path_1.default.join(basePath, attr.trait_type, attr.value + ".png");
-                });
-                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+            case 0: return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
+                    return (0, aws_1.downloadFromS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
+                }))];
             case 1:
+                images = _a.sent();
+                return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
+            case 2:
                 b64 = _a.sent();
                 return [4 /*yield*/, createGif(b64)];
-            case 2: return [2 /*return*/, _a.sent()];
+            case 3: return [2 /*return*/, _a.sent()];
         }
     });
 }); };

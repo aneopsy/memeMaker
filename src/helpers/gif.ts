@@ -83,7 +83,6 @@ export const generateGif = async (unsequenced: Attribute[]) => {
       downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
     )
   );
-  console.log(images);
   const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
   return await createGif(b64);
 };
