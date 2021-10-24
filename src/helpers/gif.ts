@@ -100,8 +100,10 @@ function removeImageBlanks(imageObject) {
       };
     },
     isWhite = function (rgb) {
-      // many images contain noise, as the white is not a pure #fff white
-      return rgb.red > 200 && rgb.green > 200 && rgb.blue > 200;
+      return (
+        rgb.opacity === 0 ||
+        (rgb.red > 200 && rgb.green > 200 && rgb.blue > 200)
+      );
     },
     scanY = function (fromTop) {
       var offset = fromTop ? 1 : -1;
