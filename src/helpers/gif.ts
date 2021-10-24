@@ -7,7 +7,8 @@ import FormData from "form-data";
 import { attributeTable } from "./tables";
 import { upload } from "./various";
 import { Attribute } from "../types";
-import { downloadFromS3 } from "./aws";
+import { downloadAttrS3, downloadImageS3, uploadImageS3 } from "./aws";
+import { unsequence } from "./dna";
 
 async function createGif(b64: string, algorithm: string = "neuquant") {
   return new Promise<Buffer>(async (resolveMain) => {
@@ -208,34 +209,55 @@ export const getAttrFromMint = (mint: string): Attribute =>
     return acc;
   }, null);
 
-export const generateGif = async (unsequenced: Attribute[]) => {
-  const images = await Promise.all(
-    orderAttr(unsequenced).map((attr) =>
-      downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
-    )
-  );
-  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-  return await createGif(b64);
+export const generateGif = async (dna: string) => {
+  try {
+    return Buffer.from(await downloadImageS3(`gif/${dna}.gif`));
+  } catch {
+    const unsequenced = unsequence(dna);
+    const images = await Promise.all(
+      orderAttr(unsequenced).map((attr) =>
+        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+      )
+    );
+    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+    const gif = await createGif(b64);
+    await uploadImageS3(gif, `gif/${dna}.gif`);
+    return gif;
+  }
 };
 
-export const generateSample = async (unsequenced: Attribute[]) => {
-  const images = await Promise.all(
-    orderAttr(unsequenced).map((attr) =>
-      downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
-    )
-  );
-  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-  return await createSample(b64);
+export const generateSample = async (dna: string) => {
+  try {
+    return Buffer.from(await downloadImageS3(`sample/${dna}.png`));
+  } catch {
+    const unsequenced = unsequence(dna);
+    const images = await Promise.all(
+      orderAttr(unsequenced).map((attr) =>
+        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+      )
+    );
+    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+    const sample = await createSample(b64);
+    await uploadImageS3(sample, `sample/${dna}.png`);
+    return sample;
+  }
 };
 
-export const generateCrop = async (unsequenced: Attribute[]) => {
-  const images = await Promise.all(
-    orderAttr(unsequenced).map((attr) =>
-      downloadFromS3(path.join(attr.trait_type, `${attr.value}.png`))
-    )
-  );
-  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-  return await createCrop(b64);
+export const generateCrop = async (dna: string) => {
+  try {
+    return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
+  } catch {
+    const unsequenced = unsequence(dna);
+    const images = await Promise.all(
+      orderAttr(unsequenced).map((attr) =>
+        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+      )
+    );
+    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+    const crop = await createCrop(b64);
+    await uploadImageS3(crop, `crop/${dna}.png`);
+    return crop;
+  }
 };
 
 export const update2Arweave = async (manifest: any, image: Buffer) => {

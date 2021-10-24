@@ -41,7 +41,7 @@ app.get("/gif/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
 
-  const gif = await generateGif(unsequence(dna));
+  const gif = await generateGif(dna);
   res.writeHead(200, {
     "Content-Type": "image/gif",
     "Content-Length": gif.length,
@@ -53,10 +53,9 @@ app.get("/sample/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
   const png = Buffer.from(
-    (await generateSample(unsequence(dna))).replace(
-      /^data:image\/(png|jpeg|jpg);base64,/,
-      ""
-    ),
+    (await generateSample(dna))
+      .toString()
+      .replace(/^data:image\/(png|jpeg|jpg);base64,/, ""),
     "base64"
   );
 
@@ -71,10 +70,9 @@ app.get("/crop/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
   const png = Buffer.from(
-    (await generateCrop(unsequence(dna))).replace(
-      /^data:image\/(png|jpeg|jpg);base64,/,
-      ""
-    ),
+    (await generateCrop(dna))
+      .toString()
+      .replace(/^data:image\/(png|jpeg|jpg);base64,/, ""),
     "base64"
   );
 
@@ -89,7 +87,7 @@ app.post("/gif", async (req, res) => {
   const { body } = req;
   const sequenced = sequence(body);
 
-  const gif = await generateGif(unsequence(sequenced));
+  const gif = await generateGif(sequenced);
   res.writeHead(200, {
     "Content-Type": "image/gif",
     "Content-Length": gif.length,
