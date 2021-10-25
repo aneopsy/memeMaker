@@ -503,7 +503,7 @@ export const attributeTable = [
         name: "Staff (Golden)",
       },
       {
-        id: 22,
+        id: 69,
         mint: null,
         name: "Penetrator",
       },
