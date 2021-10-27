@@ -71,23 +71,25 @@ var metadata_1 = require("./helpers/metadata");
 var gif_1 = require("./helpers/gif");
 var dna_1 = require("./helpers/dna");
 var transactions_1 = require("./helpers/transactions");
-var tables_1 = require("./helpers/tables");
 var pixsols_1 = __importDefault(require("./helpers/pixsols"));
 var constants_1 = require("./helpers/constants");
 var loglevel_1 = __importDefault(require("loglevel"));
+var aws_1 = require("./helpers/aws");
 loglevel_1.default.setLevel("info");
 require("dotenv").config();
 var app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 var port = process.env.PORT || 8081;
-app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+app.get("/gif/:dna", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, gif;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
+                if (!(0, gif_1.checkDNA)(dna))
+                    next("Wrong DNA");
                 return [4 /*yield*/, (0, gif_1.generateGif)(dna)];
             case 1:
                 gif = _a.sent();
@@ -100,13 +102,15 @@ app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void
         }
     });
 }); });
-app.get("/sample/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+app.get("/sample/:dna", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, png, _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
+                if (!(0, gif_1.checkDNA)(dna))
+                    next("Wrong DNA");
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, gif_1.generateSample)(dna)];
             case 1:
@@ -123,13 +127,15 @@ app.get("/sample/:dna", function (req, res) { return __awaiter(void 0, void 0, v
         }
     });
 }); });
-app.get("/sample/crop/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+app.get("/sample/crop/:dna", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, png, _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
+                if (!(0, gif_1.checkDNA)(dna))
+                    next("Wrong DNA");
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, gif_1.generateCrop)(dna)];
             case 1:
@@ -152,9 +158,11 @@ app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, 
         switch (_a.label) {
             case 0:
                 body = req.body;
-                sequenced = (0, dna_1.sequence)(body);
-                return [4 /*yield*/, (0, gif_1.generateGif)(sequenced)];
+                return [4 /*yield*/, (0, dna_1.sequence)(body)];
             case 1:
+                sequenced = _a.sent();
+                return [4 /*yield*/, (0, gif_1.generateGif)(sequenced)];
+            case 2:
                 gif = _a.sent();
                 res.writeHead(200, {
                     "Content-Type": "image/gif",
@@ -168,22 +176,33 @@ app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, 
 app.get("/decode/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, unsequenced, headers;
     return __generator(this, function (_a) {
-        params = req.params;
-        dna = params === null || params === void 0 ? void 0 : params.dna;
-        unsequenced = (0, dna_1.unsequence)(dna);
-        headers = { "Content-Type": "application/json" };
-        res.writeHead(200, headers);
-        res.end(JSON.stringify(unsequenced));
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                params = req.params;
+                dna = params === null || params === void 0 ? void 0 : params.dna;
+                return [4 /*yield*/, (0, dna_1.unsequence)(dna)];
+            case 1:
+                unsequenced = _a.sent();
+                headers = { "Content-Type": "application/json" };
+                res.writeHead(200, headers);
+                res.end(JSON.stringify(unsequenced));
+                return [2 /*return*/];
+        }
     });
 }); });
 app.get("/attributes", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var headers;
+    var headers, attributeTable;
     return __generator(this, function (_a) {
-        headers = { "Content-Type": "application/json" };
-        res.writeHead(200, headers);
-        res.end(JSON.stringify(tables_1.attributeTable));
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                headers = { "Content-Type": "application/json" };
+                return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
+            case 1:
+                attributeTable = _a.sent();
+                res.writeHead(200, headers);
+                res.end(JSON.stringify(attributeTable));
+                return [2 /*return*/];
+        }
     });
 }); });
 app.get("/pixsols", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
@@ -198,12 +217,17 @@ app.get("/pixsols", function (req, res) { return __awaiter(void 0, void 0, void 
 app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var body, sequenced, headers;
     return __generator(this, function (_a) {
-        body = req.body;
-        sequenced = (0, dna_1.sequence)(body);
-        headers = { "Content-Type": "application/json" };
-        res.writeHead(200, headers);
-        res.end(JSON.stringify(sequenced));
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                body = req.body;
+                return [4 /*yield*/, (0, dna_1.sequence)(body)];
+            case 1:
+                sequenced = _a.sent();
+                headers = { "Content-Type": "application/json" };
+                res.writeHead(200, headers);
+                res.end(JSON.stringify(sequenced));
+                return [2 /*return*/];
+        }
     });
 }); });
 app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
@@ -282,49 +306,54 @@ app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0
                     }));
                     return [2 /*return*/];
                 }
-                newAttrs = newAttrInfo.map(function (attrInfo) {
-                    return (0, gif_1.getAttrFromMint)(attrInfo.mint);
-                });
+                return [4 /*yield*/, Promise.all(newAttrInfo.map(function (attrInfo) { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4 /*yield*/, (0, gif_1.getAttrFromMint)(attrInfo.mint)];
+                            case 1: return [2 /*return*/, _a.sent()];
+                        }
+                    }); }); }))];
+            case 3:
+                newAttrs = _b.sent();
                 console.log(newAttrs);
                 return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
-            case 3:
+            case 4:
                 metadataKey = _b.sent();
                 return [4 /*yield*/, connection.getAccountInfo(metadataKey)];
-            case 4:
+            case 5:
                 metadataAccount = _b.sent();
                 pixsolData = (0, metadata_1.decodeMetadata)(metadataAccount.data).data;
                 return [4 /*yield*/, axios_1.default.get(pixsolData.uri)];
-            case 5:
+            case 6:
                 metadata = (_b.sent()).data;
                 metadata.attributes = newAttrs.reduce(function (acc, newAttr) {
                     acc = (0, dna_1.replaceAttr)(acc, newAttr);
                     return acc;
                 }, metadata.attributes);
                 return [4 /*yield*/, (0, gif_1.generateGif)(metadata.attributes)];
-            case 6:
+            case 7:
                 gif = _b.sent();
                 newUri = null;
-                _b.label = 7;
-            case 7:
-                _b.trys.push([7, 9, , 10]);
-                return [4 /*yield*/, (0, gif_1.update2Arweave)(metadata, Buffer.from(gif))];
+                _b.label = 8;
             case 8:
-                newUri = _b.sent();
-                return [3 /*break*/, 10];
+                _b.trys.push([8, 10, , 11]);
+                return [4 /*yield*/, (0, gif_1.update2Arweave)(metadata, Buffer.from(gif))];
             case 9:
-                _a = _b.sent();
-                return [3 /*break*/, 10];
+                newUri = _b.sent();
+                return [3 /*break*/, 11];
             case 10:
-                if (!newUri) return [3 /*break*/, 7];
-                _b.label = 11;
+                _a = _b.sent();
+                return [3 /*break*/, 11];
             case 11:
+                if (!newUri) return [3 /*break*/, 8];
+                _b.label = 12;
+            case 12:
                 pixsolData.uri = newUri;
                 instructions = [];
                 return [4 /*yield*/, (0, metadata_1.updateMetadata)(pixsolData, undefined, undefined, pixsolMint, walletKeyPair.publicKey.toBase58(), instructions, metadataKey.toBase58())];
-            case 12:
+            case 13:
                 _b.sent();
                 return [4 /*yield*/, (0, transactions_1.sendTransactionWithRetryWithKeypair)(connection, walletKeyPair, instructions, [], "confirmed")];
-            case 13:
+            case 14:
                 tx = _b.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + tx.txid);
                 console.log("###############################################");

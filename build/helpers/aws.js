@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = void 0;
+exports.getAttributeTable = exports.downloadS3 = exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = void 0;
 var aws_sdk_1 = __importDefault(require("aws-sdk"));
 function downloadAttrS3(attachmentId) {
     return __awaiter(this, void 0, void 0, function () {
@@ -121,4 +121,44 @@ function uploadImageS3(file, key) {
     });
 }
 exports.uploadImageS3 = uploadImageS3;
+function downloadS3(bucket, attachmentId) {
+    return __awaiter(this, void 0, void 0, function () {
+        var s3, file, err_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    s3 = new aws_sdk_1.default.S3();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, s3
+                            .getObject({
+                            Bucket: bucket,
+                            Key: attachmentId,
+                        })
+                            .promise()];
+                case 2:
+                    file = _a.sent();
+                    return [2 /*return*/, file.Body];
+                case 3:
+                    err_2 = _a.sent();
+                    throw err_2;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.downloadS3 = downloadS3;
+var getAttributeTable = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _b = (_a = JSON).parse;
+                return [4 /*yield*/, downloadS3("pixsols-config", "attributes.json")];
+            case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])];
+        }
+    });
+}); };
+exports.getAttributeTable = getAttributeTable;
 //# sourceMappingURL=aws.js.map

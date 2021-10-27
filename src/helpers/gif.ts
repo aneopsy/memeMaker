@@ -4,10 +4,14 @@ import GIFEncoder from "gif-encoder-2";
 import path from "path";
 import axios from "axios";
 import FormData from "form-data";
-import { attributeTable } from "./tables";
 import { upload } from "./various";
 import { Attribute } from "../types";
-import { downloadAttrS3, downloadImageS3, uploadImageS3 } from "./aws";
+import {
+  downloadAttrS3,
+  downloadImageS3,
+  getAttributeTable,
+  uploadImageS3,
+} from "./aws";
 import { unsequence } from "./dna";
 
 export const checkDNA = (dna: string) => {
@@ -194,7 +198,8 @@ async function createCrop(b64: string) {
   });
 }
 
-const orderAttr = (attr: Attribute[]): Attribute[] => {
+const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
+  const attributeTable = await getAttributeTable();
   const order = [0, 1, 6, 5, 4, 3, 2];
   return order.map((id) => ({
     trait_type: attributeTable[id].name,
@@ -202,8 +207,9 @@ const orderAttr = (attr: Attribute[]): Attribute[] => {
   }));
 };
 
-export const getAttrFromMint = (mint: string): Attribute =>
-  attributeTable.reduce((acc: Attribute, val): Attribute => {
+export const getAttrFromMint = async (mint: string): Promise<Attribute> => {
+  const attributeTable = await getAttributeTable();
+  return attributeTable.reduce((acc: Attribute, val): Attribute => {
     if (val.items.find((x) => x.mint === mint))
       return {
         trait_type: val.name,
@@ -211,15 +217,18 @@ export const getAttrFromMint = (mint: string): Attribute =>
       };
     return acc;
   }, null);
+};
 
 export const generateGif = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
   try {
     return Buffer.from(await downloadImageS3(`gif/${dna}.gif`));
   } catch {
-    const unsequenced = unsequence(dna);
+    const unsequenced = await unsequence(dna);
     const images = await Promise.all(
-      orderAttr(unsequenced).map((attr) =>
+      (
+        await orderAttr(unsequenced)
+      ).map((attr) =>
         downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
       )
     );
@@ -235,9 +244,11 @@ export const generateSample = async (dna: string) => {
   try {
     return Buffer.from(await downloadImageS3(`sample/${dna}.png`));
   } catch {
-    const unsequenced = unsequence(dna);
+    const unsequenced = await unsequence(dna);
     const images = await Promise.all(
-      orderAttr(unsequenced).map((attr) =>
+      (
+        await orderAttr(unsequenced)
+      ).map((attr) =>
         downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
       )
     );
@@ -253,9 +264,11 @@ export const generateCrop = async (dna: string) => {
   try {
     return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
   } catch {
-    const unsequenced = unsequence(dna);
+    const unsequenced = await unsequence(dna);
     const images = await Promise.all(
-      orderAttr(unsequenced).map((attr) =>
+      (
+        await orderAttr(unsequenced)
+      ).map((attr) =>
         downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
       )
     );

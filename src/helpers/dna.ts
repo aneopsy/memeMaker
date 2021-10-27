@@ -1,5 +1,5 @@
 import { Attribute } from "../types";
-import { attributeTable } from "./tables";
+import { getAttributeTable } from "./aws";
 
 export function hex2buff(hexString) {
   hexString = hexString.replace(/^0x/, "");
@@ -32,8 +32,9 @@ export function buf2bin(buffer: number[]) {
     .join("");
 }
 
-export const unsequence = (sequence: string): Attribute[] =>
-  hex2buff(sequence).reduce((acc, id, index): any => {
+export const unsequence = async (sequence: string): Promise<Attribute[]> => {
+  const attributeTable = await getAttributeTable();
+  return hex2buff(sequence).reduce((acc, id, index): any => {
     acc.push({
       trait_type: Object.values(attributeTable)[index].name,
       value: Object.values(attributeTable)[index].items.find(
@@ -42,9 +43,11 @@ export const unsequence = (sequence: string): Attribute[] =>
     });
     return acc;
   }, []);
+};
 
-export const sequence = (object: any[]): string =>
-  buf2hex(
+export const sequence = async (object: any[]): Promise<string> => {
+  const attributeTable = await getAttributeTable();
+  return buf2hex(
     object.reduce((acc: number[], id: any): number[] => {
       if (attributeTable.find((attr) => attr.name === id.trait_type))
         acc.push(
@@ -55,6 +58,7 @@ export const sequence = (object: any[]): string =>
       return acc;
     }, [])
   );
+};
 
 export const replaceAttr = (attrs: Attribute[], attr: Attribute): Attribute[] =>
   attrs.reduce((acc: Attribute[], val) => {

@@ -27,10 +27,10 @@ import {
   sendTransactionWithRetryWithKeypair,
 } from "./helpers/transactions";
 import { Attribute } from "./types";
-import { attributeTable } from "./helpers/tables";
 import pixsols from "./helpers/pixsols";
 import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
+import { downloadS3, getAttributeTable } from "./helpers/aws";
 
 log.setLevel("info");
 
@@ -90,7 +90,7 @@ app.get("/sample/crop/:dna", async (req, res, next) => {
 
 app.post("/gif", async (req, res) => {
   const { body } = req;
-  const sequenced = sequence(body);
+  const sequenced = await sequence(body);
 
   const gif = await generateGif(sequenced);
   res.writeHead(200, {
@@ -104,7 +104,7 @@ app.get("/decode/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
 
-  const unsequenced = unsequence(dna);
+  const unsequenced = await unsequence(dna);
 
   const headers = { "Content-Type": "application/json" };
   res.writeHead(200, headers);
@@ -113,6 +113,7 @@ app.get("/decode/:dna", async (req, res) => {
 
 app.get("/attributes", async (req, res) => {
   const headers = { "Content-Type": "application/json" };
+  const attributeTable = await getAttributeTable();
   res.writeHead(200, headers);
   res.end(JSON.stringify(attributeTable));
 });
@@ -125,7 +126,7 @@ app.get("/pixsols", async (req, res) => {
 
 app.post("/encode", async (req, res) => {
   const { body } = req;
-  const sequenced = sequence(body);
+  const sequenced = await sequence(body);
 
   const headers = { "Content-Type": "application/json" };
   res.writeHead(200, headers);
@@ -219,8 +220,10 @@ app.post("/merge", async (req, res) => {
     return;
   }
 
-  const newAttrs: Attribute[] = newAttrInfo.map((attrInfo: any) =>
-    getAttrFromMint(attrInfo.mint)
+  const newAttrs: Attribute[] = await Promise.all(
+    newAttrInfo.map(
+      async (attrInfo: any) => await getAttrFromMint(attrInfo.mint)
+    )
   );
   console.log(newAttrs);
   //
