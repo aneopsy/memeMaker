@@ -40,10 +40,10 @@ app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 8081;
 
-app.get("/gif/:dna", async (req, res) => {
+app.get("/gif/:dna", async (req, res, next) => {
   const { params } = req;
   const dna = params?.dna;
-  if (!checkDNA(dna)) throw new Error("Wrong DNA");
+  if (!checkDNA(dna)) next("Wrong DNA");
   const gif = await generateGif(dna);
   res.writeHead(200, {
     "Content-Type": "image/gif",
@@ -52,10 +52,10 @@ app.get("/gif/:dna", async (req, res) => {
   res.end(gif);
 });
 
-app.get("/sample/:dna", async (req, res) => {
+app.get("/sample/:dna", async (req, res, next) => {
   const { params } = req;
   const dna = params?.dna;
-  if (!checkDNA(dna)) throw new Error("Wrong DNA");
+  if (!checkDNA(dna)) next("Wrong DNA");
   const png = Buffer.from(
     (await generateSample(dna))
       .toString()
@@ -70,10 +70,10 @@ app.get("/sample/:dna", async (req, res) => {
   res.end(png);
 });
 
-app.get("/sample/crop/:dna", async (req, res) => {
+app.get("/sample/crop/:dna", async (req, res, next) => {
   const { params } = req;
   const dna = params?.dna;
-  if (!checkDNA(dna)) throw new Error("Wrong DNA");
+  if (!checkDNA(dna)) next("Wrong DNA");
   const png = Buffer.from(
     (await generateCrop(dna))
       .toString()
