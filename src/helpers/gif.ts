@@ -10,6 +10,9 @@ import { Attribute } from "../types";
 import { downloadAttrS3, downloadImageS3, uploadImageS3 } from "./aws";
 import { unsequence } from "./dna";
 
+export const checkDNA = (dna: string) => {
+  if (!/[0-9A-Fa-f]{6}/g.test(dna)) throw new Error("Wrong DNA");
+};
 async function createGif(b64: string, algorithm: string = "neuquant") {
   return new Promise<Buffer>(async (resolveMain) => {
     let [width, height] = await new Promise((resolve) => {
@@ -211,6 +214,11 @@ export const getAttrFromMint = (mint: string): Attribute =>
 
 export const generateGif = async (dna: string) => {
   try {
+    checkDNA(dna);
+  } catch (err) {
+    throw err;
+  }
+  try {
     return Buffer.from(await downloadImageS3(`gif/${dna}.gif`));
   } catch {
     const unsequenced = unsequence(dna);
@@ -220,15 +228,18 @@ export const generateGif = async (dna: string) => {
       )
     );
     const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-    const gif = (await createGif(b64))
-      .toString()
-      .replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    const gif = await createGif(b64);
     await uploadImageS3(gif, `gif/${dna}.gif`);
     return gif;
   }
 };
 
 export const generateSample = async (dna: string) => {
+  try {
+    checkDNA(dna);
+  } catch (err) {
+    throw err;
+  }
   try {
     return Buffer.from(await downloadImageS3(`sample/${dna}.png`));
   } catch {
@@ -246,6 +257,11 @@ export const generateSample = async (dna: string) => {
 };
 
 export const generateCrop = async (dna: string) => {
+  try {
+    checkDNA(dna);
+  } catch (err) {
+    throw err;
+  }
   try {
     return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
   } catch {

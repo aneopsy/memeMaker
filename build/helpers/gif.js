@@ -55,7 +55,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.update2Arweave = exports.generateCrop = exports.generateSample = exports.generateGif = exports.getAttrFromMint = void 0;
+exports.update2Arweave = exports.generateCrop = exports.generateSample = exports.generateGif = exports.getAttrFromMint = exports.checkDNA = void 0;
 var canvas_1 = require("canvas");
 var merge_images_1 = __importDefault(require("merge-images"));
 var gif_encoder_2_1 = __importDefault(require("gif-encoder-2"));
@@ -66,6 +66,11 @@ var tables_1 = require("./tables");
 var various_1 = require("./various");
 var aws_1 = require("./aws");
 var dna_1 = require("./dna");
+var checkDNA = function (dna) {
+    if (!/[0-9A-Fa-f]{6}/g.test(dna))
+        throw new Error("Wrong DNA");
+};
+exports.checkDNA = checkDNA;
 function createGif(b64, algorithm) {
     if (algorithm === void 0) { algorithm = "neuquant"; }
     return __awaiter(this, void 0, void 0, function () {
@@ -284,31 +289,37 @@ var generateGif = function (dna) { return __awaiter(void 0, void 0, void 0, func
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
-                _d.trys.push([0, 2, , 7]);
+                try {
+                    (0, exports.checkDNA)(dna);
+                }
+                catch (err) {
+                    throw err;
+                }
+                _d.label = 1;
+            case 1:
+                _d.trys.push([1, 3, , 8]);
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, aws_1.downloadImageS3)("gif/" + dna + ".gif")];
-            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
-            case 2:
+            case 2: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
+            case 3:
                 _c = _d.sent();
                 unsequenced = (0, dna_1.unsequence)(dna);
                 return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
                         return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
                     }))];
-            case 3:
+            case 4:
                 images = _d.sent();
                 return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
-            case 4:
+            case 5:
                 b64 = _d.sent();
                 return [4 /*yield*/, createGif(b64)];
-            case 5:
-                gif = (_d.sent())
-                    .toString()
-                    .replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-                return [4 /*yield*/, (0, aws_1.uploadImageS3)(gif, "gif/" + dna + ".gif")];
             case 6:
+                gif = _d.sent();
+                return [4 /*yield*/, (0, aws_1.uploadImageS3)(gif, "gif/" + dna + ".gif")];
+            case 7:
                 _d.sent();
                 return [2 /*return*/, gif];
-            case 7: return [2 /*return*/];
+            case 8: return [2 /*return*/];
         }
     });
 }); };
@@ -318,29 +329,37 @@ var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, f
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
-                _d.trys.push([0, 2, , 7]);
+                try {
+                    (0, exports.checkDNA)(dna);
+                }
+                catch (err) {
+                    throw err;
+                }
+                _d.label = 1;
+            case 1:
+                _d.trys.push([1, 3, , 8]);
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, aws_1.downloadImageS3)("sample/" + dna + ".png")];
-            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
-            case 2:
+            case 2: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
+            case 3:
                 _c = _d.sent();
                 unsequenced = (0, dna_1.unsequence)(dna);
                 return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
                         return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
                     }))];
-            case 3:
+            case 4:
                 images = _d.sent();
                 return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
-            case 4:
+            case 5:
                 b64 = _d.sent();
                 return [4 /*yield*/, createSample(b64)];
-            case 5:
+            case 6:
                 sample = _d.sent();
                 return [4 /*yield*/, (0, aws_1.uploadImageS3)(sample, "sample/" + dna + ".png")];
-            case 6:
+            case 7:
                 _d.sent();
                 return [2 /*return*/, sample];
-            case 7: return [2 /*return*/];
+            case 8: return [2 /*return*/];
         }
     });
 }); };
@@ -350,29 +369,37 @@ var generateCrop = function (dna) { return __awaiter(void 0, void 0, void 0, fun
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
-                _d.trys.push([0, 2, , 7]);
+                try {
+                    (0, exports.checkDNA)(dna);
+                }
+                catch (err) {
+                    throw err;
+                }
+                _d.label = 1;
+            case 1:
+                _d.trys.push([1, 3, , 8]);
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, aws_1.downloadImageS3)("crop/" + dna + ".png")];
-            case 1: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
-            case 2:
+            case 2: return [2 /*return*/, _b.apply(_a, [_d.sent()])];
+            case 3:
                 _c = _d.sent();
                 unsequenced = (0, dna_1.unsequence)(dna);
                 return [4 /*yield*/, Promise.all(orderAttr(unsequenced).map(function (attr) {
                         return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
                     }))];
-            case 3:
+            case 4:
                 images = _d.sent();
                 return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
-            case 4:
+            case 5:
                 b64 = _d.sent();
                 return [4 /*yield*/, createCrop(b64)];
-            case 5:
+            case 6:
                 crop = _d.sent();
                 return [4 /*yield*/, (0, aws_1.uploadImageS3)(crop, "crop/" + dna + ".png")];
-            case 6:
+            case 7:
                 _d.sent();
                 return [2 /*return*/, crop];
-            case 7: return [2 /*return*/];
+            case 8: return [2 /*return*/];
         }
     });
 }); };
