@@ -220,7 +220,9 @@ export const generateGif = async (dna: string) => {
       )
     );
     const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-    const gif = await createGif(b64);
+    const gif = (await createGif(b64))
+      .toString()
+      .replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     await uploadImageS3(gif, `gif/${dna}.gif`);
     return gif;
   }

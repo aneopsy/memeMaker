@@ -9,10 +9,6 @@ export async function downloadAttrS3(attachmentId) {
     })
     .promise();
   return file.Body;
-  // {
-  //   data: file.Body,
-  //   mimetype: file.ContentType,
-  // };
 }
 
 export async function downloadImageS3(attachmentId) {
