@@ -301,7 +301,9 @@ var generateGif = function (dna) { return __awaiter(void 0, void 0, void 0, func
                 b64 = _d.sent();
                 return [4 /*yield*/, createGif(b64)];
             case 5:
-                gif = _d.sent();
+                gif = (_d.sent())
+                    .toString()
+                    .replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
                 return [4 /*yield*/, (0, aws_1.uploadImageS3)(gif, "gif/" + dna + ".gif")];
             case 6:
                 _d.sent();

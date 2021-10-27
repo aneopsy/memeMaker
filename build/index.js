@@ -59,6 +59,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
+var cors_1 = __importDefault(require("cors"));
 var bs58_1 = __importDefault(require("bs58"));
 var nacl = __importStar(require("tweetnacl"));
 var axios_1 = __importDefault(require("axios"));
@@ -77,6 +78,7 @@ var loglevel_1 = __importDefault(require("loglevel"));
 loglevel_1.default.setLevel("info");
 require("dotenv").config();
 var app = (0, express_1.default)();
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 var port = process.env.PORT || 8081;
 app.get("/gif/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
@@ -305,7 +307,7 @@ app.post("/merge", function (req, res) { return __awaiter(void 0, void 0, void 0
                 _b.label = 7;
             case 7:
                 _b.trys.push([7, 9, , 10]);
-                return [4 /*yield*/, (0, gif_1.update2Arweave)(metadata, gif)];
+                return [4 /*yield*/, (0, gif_1.update2Arweave)(metadata, Buffer.from(gif))];
             case 8:
                 newUri = _b.sent();
                 return [3 /*break*/, 10];

@@ -240,7 +240,7 @@ app.post("/merge", async (req, res) => {
   let newUri = null;
   do {
     try {
-      newUri = await update2Arweave(metadata, gif);
+      newUri = await update2Arweave(metadata, Buffer.from(gif));
     } catch {}
   } while (!newUri);
 
