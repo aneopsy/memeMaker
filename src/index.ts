@@ -13,6 +13,7 @@ import { getMetadata, getTokenWallet } from "./helpers/accounts";
 import { toPublicKey } from "./helpers/various";
 import { decodeMetadata, updateMetadata } from "./helpers/metadata";
 import {
+  checkDNA,
   generateCrop,
   generateGif,
   generateSample,
@@ -42,7 +43,7 @@ const port = process.env.PORT || 8081;
 app.get("/gif/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
-
+  if (!checkDNA(dna)) throw new Error("Wrong DNA");
   const gif = await generateGif(dna);
   res.writeHead(200, {
     "Content-Type": "image/gif",
@@ -54,6 +55,7 @@ app.get("/gif/:dna", async (req, res) => {
 app.get("/sample/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
+  if (!checkDNA(dna)) throw new Error("Wrong DNA");
   const png = Buffer.from(
     (await generateSample(dna))
       .toString()
@@ -71,6 +73,7 @@ app.get("/sample/:dna", async (req, res) => {
 app.get("/sample/crop/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
+  if (!checkDNA(dna)) throw new Error("Wrong DNA");
   const png = Buffer.from(
     (await generateCrop(dna))
       .toString()
