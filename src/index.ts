@@ -197,7 +197,7 @@ app.post("/merge", async (req, res, next) => {
         hasPaid = true;
       if (
         element?.parsed?.type === "burn" &&
-        element?.parsed?.info?.authority === authority &&
+        // element?.parsed?.info?.authority === authority &&
         element.parsed.info.amount === "1"
       )
         acc.push(element.parsed.info.mint);
@@ -275,7 +275,7 @@ app.post("/merge", async (req, res, next) => {
     walletKeyPair,
     instructions,
     [],
-    "processed"
+    "confirmed"
   );
 
   console.log(
