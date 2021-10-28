@@ -9,7 +9,7 @@ import axios from "axios";
 import * as anchor from "@project-serum/anchor";
 
 import { getConnection } from "./helpers/connection";
-import { getMetadata, getTokenWallet } from "./helpers/accounts";
+import { getAtaForMint, getMetadata, getTokenWallet } from "./helpers/accounts";
 import { toPublicKey } from "./helpers/various";
 import { decodeMetadata, updateMetadata } from "./helpers/metadata";
 import {
@@ -208,7 +208,21 @@ app.post("/merge", async (req, res, next) => {
   //
   const metadataKey = await getMetadata(toPublicKey(pixsolMint));
   const metadataAccount = await connection.getAccountInfo(metadataKey);
-
+  const owners = await connection.getTokenLargestAccounts(
+    toPublicKey(pixsolMint)
+  );
+  if (
+    (
+      await getAtaForMint(
+        toPublicKey(pixsolMint),
+        fetched.transaction.message.accountKeys[0].pubkey
+      )
+    )[0].toBase58() !== owners.value[0].address.toBase58()
+  ) {
+    return res.status(400).send({
+      message: "You are not the Pixsol owner!",
+    });
+  }
   const pixsolData = decodeMetadata(metadataAccount.data).data;
 
   const metadata: any = (await axios.get(pixsolData.uri)).data;
