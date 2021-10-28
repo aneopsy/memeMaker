@@ -35,11 +35,11 @@ export function buf2bin(buffer: number[]) {
 export const unsequence = async (sequence: string): Promise<Attribute[]> => {
   const attributeTable = await getAttributeTable();
   return hex2buff(sequence).reduce((acc, id, index): any => {
+    console.log(id, attributeTable[index].name, attributeTable[index].items);
     acc.push({
-      trait_type: Object.values(attributeTable)[index].name,
-      value: Object.values(attributeTable)[index].items.find(
-        (attr) => attr.id === id
-      ).name,
+      trait_type: attributeTable[index].name,
+      value: attributeTable[index].items.find((attr: any) => attr.id === id)
+        .name,
     });
     return acc;
   }, []);
@@ -47,16 +47,23 @@ export const unsequence = async (sequence: string): Promise<Attribute[]> => {
 
 export const sequence = async (object: any[]): Promise<string> => {
   const attributeTable = await getAttributeTable();
-  return buf2hex(
-    object.reduce((acc: number[], id: any): number[] => {
-      if (attributeTable.find((attr) => attr.name === id.trait_type))
-        acc.push(
-          attributeTable
-            .find((attr) => attr.name === id.trait_type)
-            .items.find((trait) => trait.name === id.value).id as number
-        );
-      return acc;
-    }, [])
+  return (
+    buf2hex(
+      attributeTable
+        ?.reduce((acc, val) => {
+          acc.push(object.find((attr) => val.name === attr.trait_type));
+          return acc;
+        }, [])
+        ?.reduce((acc: number[], id: any): number[] => {
+          if (attributeTable.find((attr) => attr.name === id.trait_type))
+            acc.push(
+              attributeTable
+                .find((attr) => attr.name === id.trait_type)
+                .items.find((trait) => trait.name === id.value).id as number
+            );
+          return acc;
+        }, [])
+    ) || ""
   );
 };
 

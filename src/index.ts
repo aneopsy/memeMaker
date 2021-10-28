@@ -133,8 +133,8 @@ app.post("/encode", async (req, res) => {
   res.end(JSON.stringify(sequenced));
 });
 
-app.post("/merge", async (req, res) => {
-  const timeValidation = 1000 * 60;
+app.post("/merge", async (req, res, next) => {
+  const mergePrice = 20000000;
   const authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
   const connection = getConnection("mainnet-beta");
   const walletKeyPair = anchor.web3.Keypair.fromSecretKey(
@@ -142,70 +142,78 @@ app.post("/merge", async (req, res) => {
   );
   const headers = { "Content-Type": "application/json" };
   const { body } = req;
-  const { signature, data, signer } = body;
+  const { signedTx } = body;
+  // console.log(signedTx);
 
-  const verify = nacl.sign.detached.verify(
-    new TextEncoder().encode(JSON.stringify(data)),
-    bs58.decode(signature),
-    bs58.decode(signer)
-  );
-  if (!verify) {
-    res.writeHead(200, headers);
-    res.end(JSON.stringify({ error: "Invalid signature" }));
-    return;
-  }
-  if (data.timestamp + timeValidation < Date.now()) {
-    res.writeHead(200, headers);
-    res.end(JSON.stringify({ error: "Request is outdated" }));
-    return;
-  }
-  const pixsolMint = data.params.address;
-  console.log("pixsolAddr", pixsolMint);
+  const tx = await connection.sendRawTransaction(signedTx, {
+    skipPreflight: true,
+  });
+  // console.log(tx);
+  // const signedTx = JSON.parse(body);
+  // const verify = nacl.sign.detached.verify(
+  //   new TextEncoder().encode(JSON.stringify(data)),
+  //   bs58.decode(signature),
+  //   bs58.decode(signer)
+  // );
+  // if (!verify) {
+  //   res.writeHead(200, headers);
+  //   res.end(JSON.stringify({ error: "Invalid signature" }));
+  //   return;
+  // }
+  // if (data.timestamp + timeValidation < Date.now()) {
+  //   res.writeHead(200, headers);
+  //   res.end(JSON.stringify({ error: "Request is outdated" }));
+  //   return;
+  // }
+  // const pixsolMint = data.params.address;
+  // console.log("pixsolAddr", pixsolMint);
 
   //
   // VERIFICATION ON CHAIN FOR ATTR
   //
-  console.log(`###############################################`);
+  // console.log(`###############################################`);
   const fetched: any = await awaitParsedConfirmedTransactions(
-    data.params.tx,
+    tx,
     DEFAULT_TIMEOUT,
-    connection
+    connection,
+    "confirmed"
   );
-  console.log("fetched", fetched);
+  // console.log("fetched", fetched);
   if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
     res.writeHead(200, headers);
     res.end(JSON.stringify({ error: "Invalid Tx" }));
     return;
   }
-  let memo;
+  let pixsolMint: string;
+  let hasPaid: boolean;
   const newAttrInfo = await fetched.transaction.message.instructions.reduce(
-    async (acc: any[], element: any) => {
-      console.log(JSON.stringify(element, null, 2));
-      if (element.program === "spl-memo") memo = element.parsed;
+    (acc: string[], element: any) => {
+      if (element.program === "spl-memo") pixsolMint = element.parsed;
       if (
-        element?.parsed?.type === "transferChecked" &&
-        element?.parsed?.info?.authority === authority &&
-        element.parsed.info.tokenAmount.amount === "1" //&&
-        // ((await getTokenWallet(
-        //   toPublicKey(signer),
-        //   toPublicKey(element.parsed.info.mint)
-        // )) === element.parsed.info.source &&
-        //   (await getTokenWallet(
-        //     toPublicKey(authority),
-        //     toPublicKey(element.parsed.info.mint)
-        //   ))) === element.parsed.info.destination
+        element?.parsed?.type === "transfer" &&
+        element?.parsed?.info?.destination === authority &&
+        element.parsed.info.lamports === mergePrice
       )
-        acc.push(element.parsed.info);
+        hasPaid = true;
+      if (
+        element?.parsed?.type === "burn" &&
+        element?.parsed?.info?.authority === authority &&
+        element.parsed.info.amount === "1"
+      )
+        acc.push(element.parsed.info.mint);
       return acc;
     },
     []
   );
 
-  if (parseInt(memo) !== data.timestamp) {
+  console.log("hasPaid", hasPaid);
+  console.log("pixsolMint", pixsolMint);
+  console.log(newAttrInfo);
+  if (!pixsolMint) {
     res.writeHead(200, headers);
     res.end(
       JSON.stringify({
-        error: "Timestamp in Tx and in signature is not the same",
+        error: "No pixsolMint found in the Tx",
       })
     );
     return;
@@ -221,11 +229,9 @@ app.post("/merge", async (req, res) => {
   }
 
   const newAttrs: Attribute[] = await Promise.all(
-    newAttrInfo.map(
-      async (attrInfo: any) => await getAttrFromMint(attrInfo.mint)
-    )
+    newAttrInfo.map(async (mint: any) => getAttrFromMint(mint))
   );
-  console.log(newAttrs);
+
   //
   // NEW METADATA
   //
@@ -235,14 +241,14 @@ app.post("/merge", async (req, res) => {
   const pixsolData = decodeMetadata(metadataAccount.data).data;
 
   const metadata: any = (await axios.get(pixsolData.uri)).data;
-  metadata.attributes = newAttrs.reduce(
-    (acc: Attribute[], newAttr: Attribute): Attribute[] => {
+  metadata.attributes = newAttrs
+    .reduce((acc: Attribute[], newAttr: Attribute): Attribute[] => {
       acc = replaceAttr(acc, newAttr);
       return acc;
-    },
-    metadata.attributes
-  );
-  const gif = await generateGif(metadata.attributes);
+    }, metadata.attributes)
+    .filter((attr) => attr.trait_type !== "Rank");
+  console.log(metadata.attributes);
+  const gif = await generateGif(await sequence(metadata.attributes));
   let newUri = null;
   do {
     try {
@@ -264,19 +270,28 @@ app.post("/merge", async (req, res) => {
     instructions,
     metadataKey.toBase58()
   );
-  const tx = await sendTransactionWithRetryWithKeypair(
+  const txUpdateMetadata = await sendTransactionWithRetryWithKeypair(
     connection,
     walletKeyPair,
     instructions,
     [],
-    "confirmed"
+    "processed"
   );
 
-  console.log(`+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${tx.txid}`);
+  console.log(
+    `+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${txUpdateMetadata.txid}`
+  );
   console.log(`###############################################`);
 
   res.writeHead(200, headers);
-  res.end(JSON.stringify({ error: null, tx: tx.txid, mint: pixsolMint }));
+  res.end(
+    JSON.stringify({
+      error: null,
+      txUpdateMetadata: txUpdateMetadata.txid,
+      mint: pixsolMint,
+      tx,
+    })
+  );
 });
 
 //
