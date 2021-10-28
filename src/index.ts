@@ -143,35 +143,14 @@ app.post("/merge", async (req, res, next) => {
   const headers = { "Content-Type": "application/json" };
   const { body } = req;
   const { signedTx } = body;
-  // console.log(signedTx);
 
   const tx = await connection.sendRawTransaction(signedTx, {
     skipPreflight: true,
   });
-  // console.log(tx);
-  // const signedTx = JSON.parse(body);
-  // const verify = nacl.sign.detached.verify(
-  //   new TextEncoder().encode(JSON.stringify(data)),
-  //   bs58.decode(signature),
-  //   bs58.decode(signer)
-  // );
-  // if (!verify) {
-  //   res.writeHead(200, headers);
-  //   res.end(JSON.stringify({ error: "Invalid signature" }));
-  //   return;
-  // }
-  // if (data.timestamp + timeValidation < Date.now()) {
-  //   res.writeHead(200, headers);
-  //   res.end(JSON.stringify({ error: "Request is outdated" }));
-  //   return;
-  // }
-  // const pixsolMint = data.params.address;
-  // console.log("pixsolAddr", pixsolMint);
 
   //
   // VERIFICATION ON CHAIN FOR ATTR
   //
-  // console.log(`###############################################`);
   const fetched: any = await awaitParsedConfirmedTransactions(
     tx,
     DEFAULT_TIMEOUT,
@@ -180,9 +159,9 @@ app.post("/merge", async (req, res, next) => {
   );
   // console.log("fetched", fetched);
   if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
-    res.writeHead(200, headers);
-    res.end(JSON.stringify({ error: "Invalid Tx" }));
-    return;
+    return res.status(400).send({
+      message: "Invalid Tx",
+    });
   }
   let pixsolMint: string;
   let hasPaid: boolean;
@@ -210,22 +189,14 @@ app.post("/merge", async (req, res, next) => {
   console.log("pixsolMint", pixsolMint);
   console.log(newAttrInfo);
   if (!pixsolMint) {
-    res.writeHead(200, headers);
-    res.end(
-      JSON.stringify({
-        error: "No pixsolMint found in the Tx",
-      })
-    );
-    return;
+    return res.status(400).send({
+      message: "No pixsolMint found in the Tx",
+    });
   }
   if (!newAttrInfo.length) {
-    res.writeHead(200, headers);
-    res.end(
-      JSON.stringify({
-        error: "No attributes found in the Tx",
-      })
-    );
-    return;
+    return res.status(400).send({
+      message: "No attributes found in the Tx",
+    });
   }
 
   const newAttrs: Attribute[] = await Promise.all(
