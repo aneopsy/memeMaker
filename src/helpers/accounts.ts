@@ -67,8 +67,8 @@ export const createConfig = async function (
 };
 
 export const getTokenWallet = async function (
-  wallet: PublicKey,
-  mint: PublicKey
+  mint: PublicKey,
+  wallet: PublicKey
 ) {
   return (
     await PublicKey.findProgramAddress(
@@ -133,11 +133,15 @@ export const getAtaForMint = async (
   mint: anchor.web3.PublicKey,
   buyer: anchor.web3.PublicKey
 ): Promise<[anchor.web3.PublicKey, number]> => {
-  return await anchor.web3.PublicKey.findProgramAddress(
+  if (!PublicKey.isOnCurve(buyer.toBuffer())) {
+    throw new Error(`Buyer cannot sign: ${buyer.toString()}`);
+  }
+  return await PublicKey.findProgramAddress(
     [buyer.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
     SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
   );
 };
+
 export function loadWalletKey(keypair: string): Keypair {
   return Keypair.fromSecretKey(
     new Uint8Array(JSON.parse(fs.readFileSync(keypair).toString()))

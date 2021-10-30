@@ -211,13 +211,15 @@ app.post("/merge", async (req, res, next) => {
   const owners = await connection.getTokenLargestAccounts(
     toPublicKey(pixsolMint)
   );
+  const ownerAccount = owners.value[0].address;
+  const accountInfo = (await connection.getParsedAccountInfo(ownerAccount))
+    .value;
+
   if (
-    (
-      await getAtaForMint(
-        toPublicKey(pixsolMint),
-        fetched.transaction.message.accountKeys[0].pubkey
-      )
-    )[0].toBase58() !== owners.value[0].address.toBase58()
+    accountInfo &&
+    "parsed" in accountInfo.data &&
+    accountInfo.data.parsed.info.owner !==
+      fetched.transaction.message.accountKeys[0].pubkey.toBase58()
   ) {
     return res.status(400).send({
       message: "You are not the Pixsol owner!",
