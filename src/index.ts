@@ -124,6 +124,13 @@ app.get("/pixsols", async (req, res) => {
   res.end(JSON.stringify(pixsols));
 });
 
+app.get("/holders", async (req, res) => {
+  const headers = { "Content-Type": "application/json" };
+  const holders = await downloadS3("pixsols-config", "leaderboard.json");
+  res.writeHead(200, headers);
+  res.end(holders);
+});
+
 app.post("/encode", async (req, res) => {
   const { body } = req;
   const sequenced = await sequence(body);

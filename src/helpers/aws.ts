@@ -58,6 +58,26 @@ export async function downloadS3(bucket: string, attachmentId: string) {
   }
 }
 
+export async function uploadS3(
+  bucket: string,
+  key: string,
+  file: Buffer | string
+) {
+  const s3 = new AWS.S3();
+
+  try {
+    await s3
+      .upload({
+        Bucket: bucket,
+        Key: key,
+        Body: file,
+      })
+      .promise();
+  } catch (s3Err) {
+    throw s3Err;
+  }
+}
+
 export const getAttributeTable = async (): Promise<any[]> =>
   JSON.parse(
     (await downloadS3("pixsols-config", "attributes.json")).toString()
