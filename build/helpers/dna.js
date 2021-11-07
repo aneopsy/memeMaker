@@ -98,9 +98,11 @@ var unsequence = function (sequence) { return __awaiter(void 0, void 0, void 0, 
             case 1:
                 attributeTable = _a.sent();
                 return [2 /*return*/, hex2buff(sequence).reduce(function (acc, id, index) {
+                        console.log(id, attributeTable[index].name, attributeTable[index].items);
                         acc.push({
-                            trait_type: Object.values(attributeTable)[index].name,
-                            value: Object.values(attributeTable)[index].items.find(function (attr) { return attr.id === id; }).name,
+                            trait_type: attributeTable[index].name,
+                            value: attributeTable[index].items.find(function (attr) { return attr.id === id; })
+                                .name,
                         });
                         return acc;
                     }, [])];
@@ -110,18 +112,22 @@ var unsequence = function (sequence) { return __awaiter(void 0, void 0, void 0, 
 exports.unsequence = unsequence;
 var sequence = function (object) { return __awaiter(void 0, void 0, void 0, function () {
     var attributeTable;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
             case 1:
-                attributeTable = _a.sent();
-                return [2 /*return*/, buf2hex(object.reduce(function (acc, id) {
+                attributeTable = _b.sent();
+                return [2 /*return*/, (buf2hex((_a = attributeTable === null || attributeTable === void 0 ? void 0 : attributeTable.reduce(function (acc, val) {
+                        acc.push(object.find(function (attr) { return val.name === attr.trait_type; }));
+                        return acc;
+                    }, [])) === null || _a === void 0 ? void 0 : _a.reduce(function (acc, id) {
                         if (attributeTable.find(function (attr) { return attr.name === id.trait_type; }))
                             acc.push(attributeTable
                                 .find(function (attr) { return attr.name === id.trait_type; })
                                 .items.find(function (trait) { return trait.name === id.value; }).id);
                         return acc;
-                    }, []))];
+                    }, [])) || "")];
         }
     });
 }); };

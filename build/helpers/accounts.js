@@ -116,7 +116,7 @@ var createConfig = function (anchorProgram, payerWallet, configData, months) {
     });
 };
 exports.createConfig = createConfig;
-var getTokenWallet = function (wallet, mint) {
+var getTokenWallet = function (mint, wallet) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -175,7 +175,11 @@ exports.getMasterEdition = getMasterEdition;
 var getAtaForMint = function (mint, buyer) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, anchor.web3.PublicKey.findProgramAddress([buyer.toBuffer(), constants_1.TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()], constants_1.SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID)];
+            case 0:
+                if (!web3_js_1.PublicKey.isOnCurve(buyer.toBuffer())) {
+                    throw new Error("Buyer cannot sign: " + buyer.toString());
+                }
+                return [4 /*yield*/, web3_js_1.PublicKey.findProgramAddress([buyer.toBuffer(), constants_1.TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()], constants_1.SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID)];
             case 1: return [2 /*return*/, _a.sent()];
         }
     });

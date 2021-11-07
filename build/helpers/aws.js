@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAttributeTable = exports.downloadS3 = exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = void 0;
+exports.getAttributeTable = exports.uploadS3 = exports.downloadS3 = exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = void 0;
 var aws_sdk_1 = __importDefault(require("aws-sdk"));
 function downloadAttrS3(attachmentId) {
     return __awaiter(this, void 0, void 0, function () {
@@ -149,6 +149,35 @@ function downloadS3(bucket, attachmentId) {
     });
 }
 exports.downloadS3 = downloadS3;
+function uploadS3(bucket, key, file) {
+    return __awaiter(this, void 0, void 0, function () {
+        var s3, s3Err_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    s3 = new aws_sdk_1.default.S3();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, s3
+                            .upload({
+                            Bucket: bucket,
+                            Key: key,
+                            Body: file,
+                        })
+                            .promise()];
+                case 2:
+                    _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    s3Err_2 = _a.sent();
+                    throw s3Err_2;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.uploadS3 = uploadS3;
 var getAttributeTable = function () { return __awaiter(void 0, void 0, void 0, function () {
     var _a, _b;
     return __generator(this, function (_c) {
