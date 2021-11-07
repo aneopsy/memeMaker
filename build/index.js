@@ -60,6 +60,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
 var cors_1 = __importDefault(require("cors"));
+var bs58_1 = __importDefault(require("bs58"));
+var nacl = __importStar(require("tweetnacl"));
 var axios_1 = __importDefault(require("axios"));
 var anchor = __importStar(require("@project-serum/anchor"));
 var sha256_1 = __importDefault(require("crypto-js/sha256"));
@@ -245,7 +247,7 @@ app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 
     });
 }); });
 app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var mergePrice, authority, connection, walletKeyPair, headers, body, signedTx, tx, fetched, pixsolMint, hasPaid, newAttrInfo, newAttrs, metadataKey, metadataAccount, owners, ownerAccount, accountInfo, pixsolData, metadata, gif, _a, pixsolKey, instructions, txUpdateMetadata;
+    var mergePrice, authority, connection, walletKeyPair, headers, body, signedTx, tx, fetched, pixsolMint, hasPaid, newAttrInfo, newAttrs, metadataKey, metadataAccount, owners, ownerAccount, accountInfo, pixsolData, metadata, gifLink, _a, pixsolKey, instructions, txUpdateMetadata;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -335,24 +337,122 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                     return acc;
                 }, metadata.attributes)
                     .filter(function (attr) { return attr.trait_type !== "Rank"; });
-                console.log(metadata.attributes);
-                _a = gif_1.generateGif;
+                _a = "https://pixsols-test.herokuapp.com/gif/";
                 return [4 /*yield*/, (0, dna_1.sequence)(metadata.attributes)];
-            case 10: return [4 /*yield*/, _a.apply(void 0, [_b.sent()])];
+            case 10:
+                gifLink = _a + (_b.sent());
+                metadata.image = gifLink;
+                metadata.properties.files[0].uri = gifLink;
+                pixsolKey = (0, sha256_1.default)("PIXSOLS" + String(metadata.id));
+                return [4 /*yield*/, (0, aws_1.uploadS3)("pixsols-metadatas", "pixsols/" + pixsolKey + ".json", JSON.stringify(metadata, null, 2))];
             case 11:
-                gif = _b.sent();
-                return [4 /*yield*/, (0, aws_1.uploadS3)("pixsols-metadatas", "pixsols/" + (0, sha256_1.default)(NONCE + String(metadata.id)) + ".json", JSON.stringify(metadata, null, 2))];
-            case 12:
                 _b.sent();
-                pixsolKey = "000703834ce6c70dacb7bac014bbd6c00dfad3f4a0089455cdd5b6e61b481776";
                 pixsolData.uri = "https://pixsols-metadatas.s3.amazonaws.com/pixsols/" + pixsolKey + ".json";
                 instructions = [];
                 return [4 /*yield*/, (0, metadata_1.updateMetadata)(pixsolData, undefined, undefined, pixsolMint, walletKeyPair.publicKey.toBase58(), instructions, metadataKey.toBase58())];
-            case 13:
+            case 12:
                 _b.sent();
                 return [4 /*yield*/, (0, transactions_1.sendTransactionWithRetryWithKeypair)(connection, walletKeyPair, instructions, [], "confirmed")];
-            case 14:
+            case 13:
                 txUpdateMetadata = _b.sent();
+                console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + txUpdateMetadata.txid);
+                console.log("###############################################");
+                res.writeHead(200, headers);
+                res.end(JSON.stringify({
+                    error: null,
+                    txUpdateMetadata: txUpdateMetadata.txid,
+                    mint: pixsolMint,
+                    tx: tx,
+                }));
+                return [2 /*return*/];
+        }
+    });
+}); });
+app.post("/rename", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var mergePrice, authority, connection, walletKeyPair, headers, body, signedTx, signer, signature, data, verify, pixsolMint, tx, fetched, hasPaid, metadataKey, metadataAccount, owners, ownerAccount, accountInfo, pixsolData, metadata, pixsolKey, instructions, txUpdateMetadata;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                mergePrice = 12000000;
+                authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
+                connection = (0, connection_1.getConnection)("mainnet-beta");
+                walletKeyPair = anchor.web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(process.env.PRIVATE_KEY)));
+                headers = { "Content-Type": "application/json" };
+                body = req.body;
+                signedTx = body.signedTx, signer = body.signer, signature = body.signature, data = body.data;
+                verify = nacl.sign.detached.verify(new TextEncoder().encode(JSON.stringify(data)), bs58_1.default.decode(signature), bs58_1.default.decode(signer));
+                pixsolMint = body.data.params[0];
+                console.log("verify", verify);
+                console.log("pixsolAddr", pixsolMint);
+                return [4 /*yield*/, connection.sendRawTransaction(signedTx, {
+                        skipPreflight: true,
+                    })];
+            case 1:
+                tx = _a.sent();
+                return [4 /*yield*/, (0, transactions_1.awaitParsedConfirmedTransactions)(tx, constants_1.DEFAULT_TIMEOUT, connection, "confirmed")];
+            case 2:
+                fetched = _a.sent();
+                if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
+                    return [2 /*return*/, res.status(400).send({
+                            message: "Invalid Tx",
+                        })];
+                }
+                return [4 /*yield*/, fetched.transaction.message.instructions.map(function (element) {
+                        var _a, _b, _c;
+                        if (((_a = element === null || element === void 0 ? void 0 : element.parsed) === null || _a === void 0 ? void 0 : _a.type) === "transfer" &&
+                            ((_c = (_b = element === null || element === void 0 ? void 0 : element.parsed) === null || _b === void 0 ? void 0 : _b.info) === null || _c === void 0 ? void 0 : _c.destination) === authority &&
+                            element.parsed.info.lamports === mergePrice)
+                            hasPaid = true;
+                    })];
+            case 3:
+                _a.sent();
+                console.log("hasPaid", hasPaid);
+                console.log("pixsolMint", pixsolMint);
+                if (!pixsolMint) {
+                    return [2 /*return*/, res.status(400).send({
+                            message: "No pixsolMint found in the Tx",
+                        })];
+                }
+                return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
+            case 4:
+                metadataKey = _a.sent();
+                return [4 /*yield*/, connection.getAccountInfo(metadataKey)];
+            case 5:
+                metadataAccount = _a.sent();
+                return [4 /*yield*/, connection.getTokenLargestAccounts((0, various_1.toPublicKey)(pixsolMint))];
+            case 6:
+                owners = _a.sent();
+                ownerAccount = owners.value[0].address;
+                return [4 /*yield*/, connection.getParsedAccountInfo(ownerAccount)];
+            case 7:
+                accountInfo = (_a.sent())
+                    .value;
+                if (accountInfo &&
+                    "parsed" in accountInfo.data &&
+                    accountInfo.data.parsed.info.owner !==
+                        fetched.transaction.message.accountKeys[0].pubkey.toBase58()) {
+                    return [2 /*return*/, res.status(400).send({
+                            message: "You are not the Pixsol owner!",
+                        })];
+                }
+                pixsolData = (0, metadata_1.decodeMetadata)(metadataAccount.data).data;
+                return [4 /*yield*/, axios_1.default.get(pixsolData.uri)];
+            case 8:
+                metadata = (_a.sent()).data;
+                metadata.name = "(#" + metadata.id + ") " + data.params[1];
+                pixsolData.name = metadata.name;
+                pixsolKey = (0, sha256_1.default)("PIXSOLS" + String(metadata.id));
+                return [4 /*yield*/, (0, aws_1.uploadS3)("pixsols-metadatas", "pixsols/" + pixsolKey + ".json", JSON.stringify(metadata, null, 2))];
+            case 9:
+                _a.sent();
+                pixsolData.uri = "https://pixsols-metadatas.s3.amazonaws.com/pixsols/" + pixsolKey + ".json";
+                instructions = [];
+                return [4 /*yield*/, (0, metadata_1.updateMetadata)(pixsolData, undefined, undefined, pixsolMint, walletKeyPair.publicKey.toBase58(), instructions, metadataKey.toBase58())];
+            case 10:
+                _a.sent();
+                return [4 /*yield*/, (0, transactions_1.sendTransactionWithRetryWithKeypair)(connection, walletKeyPair, instructions, [], "confirmed")];
+            case 11:
+                txUpdateMetadata = _a.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + txUpdateMetadata.txid);
                 console.log("###############################################");
                 res.writeHead(200, headers);
