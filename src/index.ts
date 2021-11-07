@@ -165,7 +165,6 @@ app.post("/merge", async (req, res, next) => {
     connection,
     "confirmed"
   );
-  // console.log("fetched", fetched);
   if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
     return res.status(400).send({
       message: "Invalid Tx",
@@ -192,9 +191,6 @@ app.post("/merge", async (req, res, next) => {
     []
   );
 
-  console.log("hasPaid", hasPaid);
-  console.log("pixsolMint", pixsolMint);
-  console.log(newAttrInfo);
   if (!pixsolMint) {
     return res.status(400).send({
       message: "No pixsolMint found in the Tx",
@@ -279,7 +275,6 @@ app.post("/merge", async (req, res, next) => {
   console.log(
     `+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${txUpdateMetadata.txid}`
   );
-  console.log(`###############################################`);
 
   res.writeHead(200, headers);
   res.end(
@@ -309,8 +304,6 @@ app.post("/rename", async (req, res, next) => {
     bs58.decode(signer)
   );
   const pixsolMint = body.data.params[0];
-  console.log("verify", verify);
-  console.log("pixsolAddr", pixsolMint);
 
   const tx = await connection.sendRawTransaction(signedTx, {
     skipPreflight: true,
@@ -340,8 +333,6 @@ app.post("/rename", async (req, res, next) => {
       hasPaid = true;
   });
 
-  console.log("hasPaid", hasPaid);
-  console.log("pixsolMint", pixsolMint);
   if (!pixsolMint) {
     return res.status(400).send({
       message: "No pixsolMint found in the Tx",
@@ -408,7 +399,6 @@ app.post("/rename", async (req, res, next) => {
   console.log(
     `+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${txUpdateMetadata.txid}`
   );
-  console.log(`###############################################`);
 
   res.writeHead(200, headers);
   res.end(
