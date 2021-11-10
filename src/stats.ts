@@ -12,6 +12,7 @@ import {
 import { AttributeItemItem } from "./types";
 import pixsols from "./helpers/pixsols";
 import axios from "axios";
+import sha256 from "crypto-js/sha256";
 
 const THREADS = 50;
 
@@ -109,6 +110,24 @@ const THREADS = 50;
     }));
 
   console.log(JSON.stringify(ranks, null, 2));
+
+  for (let rank of ranks) {
+    const pixsolKey = sha256(`PIXSOLS${String(rank.id)}`);
+    const metadata = metadatas.find((x) => x.id === rank.id);
+    const index = (metadata.attributes as any[]).findIndex(
+      (attr) => attr["trait_type"] === "Rank"
+    );
+    if (index > -1) {
+      metadata.attributes.splice(index, 1);
+    }
+    metadata.attributes.push({ trait_type: "Rank", value: rank.rank });
+    console.log(metadata);
+    // await uploadS3(
+    //   "pixsols-metadatas",
+    //   `pixsols/${pixsolKey}.json`,
+    //   JSON.stringify(metadata, null, 2)
+    // );
+  }
 
   // Object.keys(metadatas).map((key) => {
   //   metadatas[key].metadata.attributes[
