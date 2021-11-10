@@ -513,3 +513,15 @@ export interface Presale {
   pricePerShare?: number;
   marketCap?: number;
 }
+
+export type AttributeItem = {
+  id: number;
+  name: string;
+  items: AttributeItemItem[];
+};
+export type AttributeItemItem = {
+  id: number;
+  mint: string;
+  name: string;
+  stats: { sft: number; apply: number };
+};
