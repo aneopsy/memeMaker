@@ -21,6 +21,7 @@ const THREADS = 50;
 
   const s3List = (await listS3("pixsols-metadatas"))
     .filter((x) => (x.Key as string).startsWith("pixsols/"))
+    .slice(0, 10)
     .map((x) => x.Key);
   const metadatas = [];
   let done = 0;
@@ -90,23 +91,24 @@ const THREADS = 50;
     );
   }
 
-  // const howrareis: any = metadatas.reduce((acc: any[], metadata: any) => {
-  //   const score = metadata.attributes.reduce((acc: number, attr: any) => {
-  //     if (attr["trait_type"] === "Rank") return acc;
-  //     acc += 1 / stats[attr["trait_type"]][attr.value];
-  //     return acc;
-  //   }, 0);
-  //   acc.push({ name: metadata.name, score });
-  //   return acc;
-  // }, []);
-  // console.log(JSON.stringify(howrareis, null, 2));
+  const howrareis: any = metadatas.reduce((acc: any[], metadata: any) => {
+    const score = metadata.attributes.reduce((acc: number, attr: any) => {
+      if (attr["trait_type"] === "Rank") return acc;
+      acc += 1 / stats[attr["trait_type"]][attr.value];
+      return acc;
+    }, 0);
+    acc.push({ id: metadata.id, score });
+    return acc;
+  }, []);
 
-  // const ranks = howrareis
-  //   .sort((a: any, b: any) => b.score - a.score)
-  //   .map((a: any, rank: number) => ({
-  //     ...a,
-  //     rank: `${rank + 1}/${total}`,
-  //   }));
+  const ranks = howrareis
+    .sort((a: any, b: any) => b.score - a.score)
+    .map((a: any, rank: number) => ({
+      ...a,
+      rank: `${rank + 1}/${total}`,
+    }));
+
+  console.log(JSON.stringify(ranks, null, 2));
 
   // Object.keys(metadatas).map((key) => {
   //   metadatas[key].metadata.attributes[
@@ -148,10 +150,10 @@ const THREADS = 50;
   //   })
   // );
 
-  console.log(JSON.stringify(attributeTable, null, 2));
-  await uploadS3(
-    "pixsols-config",
-    "attributes.json",
-    JSON.stringify(attributeTable, null, 2)
-  );
+  // console.log(JSON.stringify(attributeTable, null, 2));
+  // await uploadS3(
+  //   "pixsols-config",
+  //   "attributes.json",
+  //   JSON.stringify(attributeTable, null, 2)
+  // );
 })();
