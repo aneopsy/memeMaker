@@ -134,6 +134,10 @@ const THREADS = 50;
   await uploadS3(
     "pixsols-config",
     "attributes.json",
-    JSON.stringify(attributeTable, null, 2)
+    JSON.stringify(
+      { timestamp: Date.now(), attributes: attributeTable },
+      null,
+      2
+    )
   );
 })();

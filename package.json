@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "stats": "ts-node src/stats.ts",
     "leaderboard": "ts-node src/leaderboard.ts",
     "dev": "ts-node src/index.ts",
     "start": "node build/index.js",
