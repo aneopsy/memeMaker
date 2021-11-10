@@ -22,22 +22,22 @@ const THREADS = 50;
 
   const s3List = (await listS3("pixsols-metadatas"))
     .filter((x) => (x.Key as string).startsWith("pixsols/"))
-    .slice(0, 10)
+    // .slice(0, 10)
     .map((x) => x.Key);
   const metadatas = [];
   let done = 0;
   await Promise.all(
     chunks(s3List, Math.ceil(s3List.length / THREADS)).map(
-      async (attributeItems: number[]) => {
-        for (let attributeItemIndex of attributeItems) {
+      async (metadatasIds: number[]) => {
+        for (let metadatasId of metadatasIds) {
           metadatas.push(
             (
               await axios.get(
-                `https://pixsols-metadatas.s3.amazonaws.com/${attributeItemIndex}`
+                `https://pixsols-metadatas.s3.amazonaws.com/${metadatasId}`
               )
             ).data
           );
-          console.log(`+ ${done++}`);
+          console.log(`+ load metadatas ${done++}`);
         }
       }
     )
@@ -55,11 +55,9 @@ const THREADS = 50;
       stats[attr["trait_type"]][attr.value] += (1 / total) * 100;
     });
   });
-  console.log(JSON.stringify(stats, null, 2));
 
   for (let attributeIndex in attributeTable) {
     let done = 0;
-
     await Promise.all(
       chunks(
         Array.from(Array(attributeTable[attributeIndex].items.length).keys()),
@@ -83,7 +81,7 @@ const THREADS = 50;
               ] || 0,
           };
           console.log(
-            `+ done ${done++} - ${
+            `+ attributeTable ${done++} - ${
               attributeTable[attributeIndex].items[attributeItemIndex].mint
             }`
           );
@@ -109,70 +107,33 @@ const THREADS = 50;
       rank: `${rank + 1}/${total}`,
     }));
 
-  console.log(JSON.stringify(ranks, null, 2));
+  await Promise.all(
+    chunks(ranks, Math.ceil(ranks.length / THREADS)).map(
+      async (ranks: any[]) => {
+        for (let rank of ranks) {
+          const pixsolKey = sha256(`PIXSOLS${String(rank.id)}`);
+          const metadata = metadatas.find((x) => x.id === rank.id);
+          const index = (metadata.attributes as any[]).findIndex(
+            (attr) => attr["trait_type"] === "Rank"
+          );
+          if (index > -1) {
+            metadata.attributes.splice(index, 1);
+          }
+          metadata.attributes.push({ trait_type: "Rank", value: rank.rank });
+          await uploadS3(
+            "pixsols-metadatas",
+            `pixsols/${pixsolKey}.json`,
+            JSON.stringify(metadata, null, 2)
+          );
+          console.log(`+ update rank #${rank.rank} - ${rank.id}`);
+        }
+      }
+    )
+  );
 
-  for (let rank of ranks) {
-    const pixsolKey = sha256(`PIXSOLS${String(rank.id)}`);
-    const metadata = metadatas.find((x) => x.id === rank.id);
-    const index = (metadata.attributes as any[]).findIndex(
-      (attr) => attr["trait_type"] === "Rank"
-    );
-    if (index > -1) {
-      metadata.attributes.splice(index, 1);
-    }
-    metadata.attributes.push({ trait_type: "Rank", value: rank.rank });
-    console.log(metadata);
-    // await uploadS3(
-    //   "pixsols-metadatas",
-    //   `pixsols/${pixsolKey}.json`,
-    //   JSON.stringify(metadata, null, 2)
-    // );
-  }
-
-  // Object.keys(metadatas).map((key) => {
-  //   metadatas[key].metadata.attributes[
-  //     metadatas[key].metadata.attributes.length - 1
-  //   ].value = ranks.find((x) => x.name === metadatas[key].metadata.name).rank;
-  //   metadatas[key].metadata.description =
-  //     "The Pixsols are a collection of 4,877 fully customisable NFTs with an ever expanding attribute library for you to choose from. Make it your own.";
-  // });
-  // console.log(JSON.stringify(metadatas, null, 2));
-  // saveFile(file, metadatas);
-
-  // console.log(JSON.stringify(ranks.reverse(), null, 2));
-
-  // await Promise.all(
-  //   chunks(
-  //     Array.from(Array(pixsols.length).keys()),
-  //     Math.ceil(attributeTable[attributeIndex].items.length / THREADS)
-  //   ).map(async (attributeItems: number[]) => {
-  //     for (let attributeItemIndex of attributeItems) {
-  //       attributeTable[attributeIndex].items[attributeItemIndex].stats = {
-  //         sft: attributeTable[attributeIndex].items[attributeItemIndex].mint
-  //           ? (
-  //               await connection.getTokenSupply(
-  //                 toPublicKey(
-  //                   attributeTable[attributeIndex].items[attributeItemIndex]
-  //                     .mint
-  //                 )
-  //               )
-  //             ).value.uiAmount
-  //           : null,
-  //         apply: null,
-  //       };
-  //       console.log(
-  //         `+ done ${done++} - ${
-  //           attributeTable[attributeIndex].items[attributeItemIndex].mint
-  //         }`
-  //       );
-  //     }
-  //   })
-  // );
-
-  // console.log(JSON.stringify(attributeTable, null, 2));
-  // await uploadS3(
-  //   "pixsols-config",
-  //   "attributes.json",
-  //   JSON.stringify(attributeTable, null, 2)
-  // );
+  await uploadS3(
+    "pixsols-config",
+    "attributes.json",
+    JSON.stringify(attributeTable, null, 2)
+  );
 })();
