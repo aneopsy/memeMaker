@@ -33,7 +33,7 @@ export function buf2bin(buffer: number[]) {
 }
 
 export const unsequence = async (sequence: string): Promise<Attribute[]> => {
-  const attributeTable = await getAttributeTable();
+  const attributeTable = (await getAttributeTable()).attributes;
   return hex2buff(sequence).reduce((acc, id, index): any => {
     console.log(id, attributeTable[index].name, attributeTable[index].items);
     acc.push({
@@ -46,7 +46,7 @@ export const unsequence = async (sequence: string): Promise<Attribute[]> => {
 };
 
 export const sequence = async (object: any[]): Promise<string> => {
-  const attributeTable = await getAttributeTable();
+  const attributeTable = (await getAttributeTable()).attributes;
   return (
     buf2hex(
       attributeTable

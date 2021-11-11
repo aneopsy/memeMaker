@@ -8,7 +8,7 @@ const THREADS = 50;
 
 (async () => {
   const connection = getConnection("mainnet-beta");
-  const attributeTable = await getAttributeTable();
+  const attributeTable = (await getAttributeTable()).attributes;
 
   const s3List = (await listS3("pixsols-metadatas"))
     .filter((x) => (x.Key as string).startsWith("pixsols/"))
@@ -109,6 +109,7 @@ const THREADS = 50;
             metadata.attributes.splice(index, 1);
           }
           metadata.attributes.push({ trait_type: "Rank", value: rank.rank });
+          metadata.timestamp = Date.now();
           await uploadS3(
             "pixsols-metadatas",
             `pixsols/${pixsolKey}.json`,

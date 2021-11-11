@@ -199,7 +199,7 @@ async function createCrop(b64: string) {
 }
 
 const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
-  const attributeTable = await getAttributeTable();
+  const attributeTable = (await getAttributeTable()).attributes;
   const order = [0, 1, 6, 5, 4, 3, 2];
   return order.map((id) => ({
     trait_type: attributeTable[id].name,
@@ -208,7 +208,7 @@ const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
 };
 
 export const getAttrFromMint = async (mint: string): Promise<Attribute> => {
-  const attributeTable = await getAttributeTable();
+  const attributeTable = (await getAttributeTable()).attributes;
   return attributeTable.reduce((acc: Attribute, val): Attribute => {
     if (val.items.find((x) => x.mint === mint))
       return {

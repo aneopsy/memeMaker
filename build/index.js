@@ -266,7 +266,6 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                 return [4 /*yield*/, (0, transactions_1.awaitParsedConfirmedTransactions)(tx, constants_1.DEFAULT_TIMEOUT, connection, "confirmed")];
             case 2:
                 fetched = _b.sent();
-                // console.log("fetched", fetched);
                 if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
                     return [2 /*return*/, res.status(400).send({
                             message: "Invalid Tx",
@@ -287,9 +286,6 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                     }, [])];
             case 3:
                 newAttrInfo = _b.sent();
-                console.log("hasPaid", hasPaid);
-                console.log("pixsolMint", pixsolMint);
-                console.log(newAttrInfo);
                 if (!pixsolMint) {
                     return [2 /*return*/, res.status(400).send({
                             message: "No pixsolMint found in the Tx",
@@ -356,7 +352,6 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
             case 13:
                 txUpdateMetadata = _b.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + txUpdateMetadata.txid);
-                console.log("###############################################");
                 res.writeHead(200, headers);
                 res.end(JSON.stringify({
                     error: null,
@@ -382,8 +377,6 @@ app.post("/rename", function (req, res, next) { return __awaiter(void 0, void 0,
                 signedTx = body.signedTx, signer = body.signer, signature = body.signature, data = body.data;
                 verify = nacl.sign.detached.verify(new TextEncoder().encode(JSON.stringify(data)), bs58_1.default.decode(signature), bs58_1.default.decode(signer));
                 pixsolMint = body.data.params[0];
-                console.log("verify", verify);
-                console.log("pixsolAddr", pixsolMint);
                 return [4 /*yield*/, connection.sendRawTransaction(signedTx, {
                         skipPreflight: true,
                     })];
@@ -406,8 +399,6 @@ app.post("/rename", function (req, res, next) { return __awaiter(void 0, void 0,
                     })];
             case 3:
                 _a.sent();
-                console.log("hasPaid", hasPaid);
-                console.log("pixsolMint", pixsolMint);
                 if (!pixsolMint) {
                     return [2 /*return*/, res.status(400).send({
                             message: "No pixsolMint found in the Tx",
@@ -454,7 +445,6 @@ app.post("/rename", function (req, res, next) { return __awaiter(void 0, void 0,
             case 11:
                 txUpdateMetadata = _a.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + txUpdateMetadata.txid);
-                console.log("###############################################");
                 res.writeHead(200, headers);
                 res.end(JSON.stringify({
                     error: null,
