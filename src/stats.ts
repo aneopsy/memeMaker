@@ -1,16 +1,6 @@
-import { web3 } from "@project-serum/anchor";
-import kleur from "kleur";
 import { getConnection } from "./helpers/connection";
 import { chunks, loadFile, toPublicKey } from "./helpers/various";
-import {
-  downloadAttrS3,
-  downloadS3,
-  getAttributeTable,
-  listS3,
-  uploadS3,
-} from "./helpers/aws";
-import { AttributeItemItem } from "./types";
-import pixsols from "./helpers/pixsols";
+import { getAttributeTable, listS3, uploadS3 } from "./helpers/aws";
 import axios from "axios";
 import sha256 from "crypto-js/sha256";
 
@@ -22,7 +12,6 @@ const THREADS = 50;
 
   const s3List = (await listS3("pixsols-metadatas"))
     .filter((x) => (x.Key as string).startsWith("pixsols/"))
-    // .slice(0, 10)
     .map((x) => x.Key);
   const metadatas = [];
   let done = 0;

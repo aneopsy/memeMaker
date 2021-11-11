@@ -1,8 +1,5 @@
-import { Canvas, createCanvas, Image } from "canvas";
-import mergeImages from "merge-images";
 import express from "express";
 import cors from "cors";
-import path from "path";
 import bs58 from "bs58";
 import * as nacl from "tweetnacl";
 import axios from "axios";
@@ -10,7 +7,7 @@ import * as anchor from "@project-serum/anchor";
 import sha256 from "crypto-js/sha256";
 
 import { getConnection } from "./helpers/connection";
-import { getAtaForMint, getMetadata, getTokenWallet } from "./helpers/accounts";
+import { getMetadata } from "./helpers/accounts";
 import { toPublicKey } from "./helpers/various";
 import { decodeMetadata, updateMetadata } from "./helpers/metadata";
 import {
@@ -19,12 +16,10 @@ import {
   generateGif,
   generateSample,
   getAttrFromMint,
-  update2Arweave,
 } from "./helpers/gif";
 import { replaceAttr, sequence, unsequence } from "./helpers/dna";
 import {
   awaitParsedConfirmedTransactions,
-  awaitTransactionSignatureConfirmation,
   sendTransactionWithRetryWithKeypair,
 } from "./helpers/transactions";
 import { Attribute } from "./types";
