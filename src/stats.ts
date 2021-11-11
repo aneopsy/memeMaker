@@ -101,7 +101,8 @@ const THREADS = 50;
       async (ranks: any[]) => {
         for (let rank of ranks) {
           const pixsolKey = sha256(`PIXSOLS${String(rank.id)}`);
-          const metadata = metadatas.find((x) => x.id === rank.id);
+          const metadataIndex = metadatas.findIndex((x) => x.id === rank.id);
+          const metadata = metadatas[metadataIndex];
           const index = (metadata.attributes as any[]).findIndex(
             (attr) => attr["trait_type"] === "Rank"
           );
@@ -115,10 +116,17 @@ const THREADS = 50;
             `pixsols/${pixsolKey}.json`,
             JSON.stringify(metadata, null, 2)
           );
+          metadatas[metadataIndex] = metadata;
           console.log(`+ update rank #${rank.rank} - ${rank.id}`);
         }
       }
     )
+  );
+
+  await uploadS3(
+    "pixsols-config",
+    "metadatas.json",
+    JSON.stringify({ timestamp: Date.now(), metadatas }, null, 2)
   );
 
   await uploadS3(
