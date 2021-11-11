@@ -129,3 +129,6 @@ export const getAttributeTable = async (): Promise<{
   JSON.parse(
     (await downloadS3("pixsols-config", "attributes.json")).toString()
   ) as { timestamp: number; attributes: AttributeItem[] };
+
+export const getMetadatas = async (): Promise<any> =>
+  JSON.parse((await downloadS3("pixsols-config", "metadatas.json")).toString());

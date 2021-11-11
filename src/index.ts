@@ -26,7 +26,12 @@ import { Attribute } from "./types";
 import pixsols from "./helpers/pixsols";
 import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
-import { downloadS3, getAttributeTable, uploadS3 } from "./helpers/aws";
+import {
+  downloadS3,
+  getAttributeTable,
+  getMetadatas,
+  uploadS3,
+} from "./helpers/aws";
 
 log.setLevel("info");
 
@@ -112,6 +117,13 @@ app.get("/attributes", async (req, res) => {
   const attributeTable = await getAttributeTable();
   res.writeHead(200, headers);
   res.end(JSON.stringify(attributeTable));
+});
+
+app.get("/metadatas", async (req, res) => {
+  const headers = { "Content-Type": "application/json" };
+  const metadatas = await getMetadatas();
+  res.writeHead(200, headers);
+  res.end(JSON.stringify(metadatas));
 });
 
 app.get("/pixsols", async (req, res) => {

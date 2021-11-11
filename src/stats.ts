@@ -4,7 +4,7 @@ import { getAttributeTable, listS3, uploadS3 } from "./helpers/aws";
 import axios from "axios";
 import sha256 from "crypto-js/sha256";
 
-const THREADS = 50;
+const THREADS = 100;
 
 (async () => {
   const connection = getConnection("mainnet-beta");
