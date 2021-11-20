@@ -277,27 +277,27 @@ export const generateSample = async (dna: string) => {
 
 export const generateCrop = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
-  // try {
-  //   return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
-  // } catch {
-  const unsequenced = await unsequence(dna);
-  const images = await Promise.all(
-    (
-      await orderAttr(unsequenced)
-    ).map((attr) =>
-      downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
-    )
-  );
-  const frame = fs.readFileSync("./src/img/frame.png");
-  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-  const crop = await createCrop(b64);
-  const final = await mergeImages([crop, frame], {
-    Canvas: Canvas,
-    Image: Image,
-  });
-  await uploadImageS3(final, `crop/${dna}.png`);
-  return final;
-  // }
+  try {
+    return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
+  } catch {
+    const unsequenced = await unsequence(dna);
+    const images = await Promise.all(
+      (
+        await orderAttr(unsequenced)
+      ).map((attr) =>
+        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+      )
+    );
+    const frame = fs.readFileSync("./src/img/frame.png");
+    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+    const crop = await createCrop(b64);
+    const final = await mergeImages([crop, frame], {
+      Canvas: Canvas,
+      Image: Image,
+    });
+    await uploadImageS3(final, `crop/${dna}.png`);
+    return final;
+  }
 };
 
 export const update2Arweave = async (manifest: any, image: Buffer) => {
