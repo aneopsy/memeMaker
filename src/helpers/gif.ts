@@ -13,6 +13,7 @@ import {
   uploadImageS3,
 } from "./aws";
 import { unsequence } from "./dna";
+import fs from "fs";
 
 export const checkDNA = (dna: string) => {
   return /[0-9A-Fa-f]{28}/g.test(dna);
@@ -89,7 +90,7 @@ async function createSample(b64: string) {
   });
 }
 
-function removeImageBlanks(imageObject) {
+function removeImageBlanks(imageObject: Image) {
   const imgWidth = imageObject.width;
   const imgHeight = imageObject.height;
   var canvas = createCanvas(imgWidth, imgHeight);
@@ -167,24 +168,39 @@ function removeImageBlanks(imageObject) {
     cropWidth = cropRight - cropLeft,
     cropHeight = cropBottom - cropTop;
 
-  canvas.width = cropWidth;
-  canvas.height = cropHeight;
-  // finally crop the guy
-  canvas
-    .getContext("2d")
-    .drawImage(
-      imageObject,
-      cropLeft,
-      cropTop,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      cropWidth,
-      cropHeight
-    );
+  const border = 14;
+  canvas.width = cropWidth + border * 2;
+  canvas.height = cropHeight + border * 2;
 
-  return canvas.toDataURL();
+  const refRes = { width: 224, height: 224 };
+  const scale = Math.min(
+    refRes.width / canvas.width,
+    refRes.height / canvas.height
+  );
+
+  const origin = {
+    x: 0,
+    y: 0,
+  };
+  const ctx = canvas.getContext("2d");
+  // finally crop the guy
+  ctx.drawImage(
+    imageObject,
+    cropLeft,
+    cropTop,
+    cropWidth,
+    cropHeight,
+    border,
+    border,
+    cropWidth,
+    cropHeight
+  );
+  var canvas2 = createCanvas(refRes.width, refRes.height);
+  var context2 = canvas2.getContext("2d");
+  context2.setTransform(scale, 0, 0, scale, origin.x, origin.y);
+  context2.drawImage(canvas, 0, 0);
+  context2.setTransform(1, 0, 0, 1, 0, 0);
+  return canvas2.toDataURL();
 }
 
 async function createCrop(b64: string) {
@@ -261,22 +277,27 @@ export const generateSample = async (dna: string) => {
 
 export const generateCrop = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
-  try {
-    return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
-  } catch {
-    const unsequenced = await unsequence(dna);
-    const images = await Promise.all(
-      (
-        await orderAttr(unsequenced)
-      ).map((attr) =>
-        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
-      )
-    );
-    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-    const crop = await createCrop(b64);
-    await uploadImageS3(crop, `crop/${dna}.png`);
-    return crop;
-  }
+  // try {
+  //   return Buffer.from(await downloadImageS3(`crop/${dna}.png`));
+  // } catch {
+  const unsequenced = await unsequence(dna);
+  const images = await Promise.all(
+    (
+      await orderAttr(unsequenced)
+    ).map((attr) =>
+      downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+    )
+  );
+  const frame = fs.readFileSync("./src/img/frame.png");
+  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+  const crop = await createCrop(b64);
+  const final = await mergeImages([crop, frame], {
+    Canvas: Canvas,
+    Image: Image,
+  });
+  await uploadImageS3(final, `crop/${dna}.png`);
+  return final;
+  // }
 };
 
 export const update2Arweave = async (manifest: any, image: Buffer) => {
