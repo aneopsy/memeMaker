@@ -168,7 +168,7 @@ function removeImageBlanks(imageObject: Image) {
     cropWidth = cropRight - cropLeft,
     cropHeight = cropBottom - cropTop;
 
-  const border = 14;
+  const border = 20;
   canvas.width = cropWidth + border * 2;
   canvas.height = cropHeight + border * 2;
 
