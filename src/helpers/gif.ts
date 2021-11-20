@@ -235,6 +235,21 @@ export const getAttrFromMint = async (mint: string): Promise<Attribute> => {
   }, null);
 };
 
+export const getAttrFromId = async (
+  attributeId: number,
+  traitId: number
+): Promise<Attribute> => {
+  const attributeTable = (await getAttributeTable()).attributes;
+  return attributeTable.reduce((acc: Attribute, val): Attribute => {
+    if (val.id === attributeId)
+      return {
+        trait_type: val.name,
+        value: val.items.find((x) => x.id === traitId).name,
+      };
+    return acc;
+  }, null);
+};
+
 export const generateGif = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
   try {

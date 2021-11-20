@@ -15,6 +15,7 @@ import {
   generateCrop,
   generateGif,
   generateSample,
+  getAttrFromId,
   getAttrFromMint,
 } from "./helpers/gif";
 import { replaceAttr, sequence, unsequence } from "./helpers/dna";
@@ -157,7 +158,7 @@ app.post("/merge", async (req, res, next) => {
   );
   const headers = { "Content-Type": "application/json" };
   const { body } = req;
-  const { signedTx } = body;
+  const { signedTx, attributeId, traitId } = body;
 
   const tx = await connection.sendRawTransaction(signedTx, {
     skipPreflight: true,
@@ -203,7 +204,7 @@ app.post("/merge", async (req, res, next) => {
       message: "No pixsolMint found in the Tx",
     });
   }
-  if (!newAttrInfo.length) {
+  if (!newAttrInfo.length && traitId !== 0) {
     return res.status(400).send({
       message: "No attributes found in the Tx",
     });
@@ -212,6 +213,8 @@ app.post("/merge", async (req, res, next) => {
   const newAttrs: Attribute[] = await Promise.all(
     newAttrInfo.map(async (mint: any) => getAttrFromMint(mint))
   );
+
+  if (traitId === 0) newAttrs.push(await getAttrFromId(attributeId, traitId));
 
   //
   // NEW METADATA
