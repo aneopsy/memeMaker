@@ -425,8 +425,8 @@ app.post("/rename", async (req, res, next) => {
 // OTHERS
 //
 
-app.get("/", (req, res) => res.send("You have reached the Pixsols Generator"));
+app.get("/", (req, res) => res.send("You have reached the AneoPsy Server"));
 
 app.listen(port, () => {
-  console.log(`Pixsols Generator listening at on port ${port}`);
+  console.log(`AneoPsy server listening at on port ${port}`);
 });

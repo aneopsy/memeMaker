@@ -1,5 +1,7 @@
 import AWS from "aws-sdk";
-import { AttributeItem, StringPublicKey } from "../types";
+import { AttributeItem } from "../types";
+
+const BUCKET = "nftcustdev";
 
 export async function isExistS3(bucket: string, attachmentId: string) {
   const s3 = new AWS.S3();
@@ -127,8 +129,11 @@ export const getAttributeTable = async (): Promise<{
   attributes: AttributeItem[];
 }> =>
   JSON.parse(
-    (await downloadS3("pixsols-config", "attributes.json")).toString()
-  ) as { timestamp: number; attributes: AttributeItem[] };
+    (await downloadS3(BUCKET, "config/attributes.json")).toString()
+  ) as {
+    timestamp: number;
+    attributes: AttributeItem[];
+  };
 
 export const getMetadatas = async (): Promise<any> =>
-  JSON.parse((await downloadS3("pixsols-config", "metadatas.json")).toString());
+  JSON.parse((await downloadS3(BUCKET, "config/metadatas.json")).toString());

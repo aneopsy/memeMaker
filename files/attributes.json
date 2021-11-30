@@ -1,0 +1,89 @@
+{
+  "timestamp": 1638264659936,
+  "attributes": [
+    {
+      "id": 0,
+      "name": "Background",
+      "items": [
+        {
+          "id": 0,
+          "mint": null,
+          "name": "None",
+          "stats": {
+            "sft": null,
+            "apply": 0
+          }
+        },
+        {
+          "id": 1,
+          "mint": null,
+          "name": "Aether",
+          "stats": {
+            "sft": null,
+            "apply": 1.4353085913471408
+          }
+        },
+        {
+          "id": 2,
+          "mint": null,
+          "name": "Aqua",
+          "stats": {
+            "sft": null,
+            "apply": 9.719089604264882
+          }
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Body",
+      "items": [
+        {
+          "id": 0,
+          "mint": null,
+          "name": "None",
+          "stats": {
+            "sft": null,
+            "apply": 0
+          }
+        },
+        {
+          "id": 1,
+          "mint": null,
+          "name": "Aqua",
+          "stats": {
+            "sft": null,
+            "apply": 18.741029321304254
+          }
+        },
+        {
+          "id": 2,
+          "mint": null,
+          "name": "Black",
+          "stats": {
+            "sft": null,
+            "apply": 2.4810334221857726
+          }
+        },
+        {
+          "id": 3,
+          "mint": null,
+          "name": "Lime",
+          "stats": {
+            "sft": null,
+            "apply": 20.647939306951212
+          }
+        },
+        {
+          "id": 4,
+          "mint": null,
+          "name": "Default",
+          "stats": {
+            "sft": null,
+            "apply": 42.15706376870923
+          }
+        }
+      ]
+    }
+  ]
+}

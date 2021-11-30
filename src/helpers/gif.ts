@@ -14,9 +14,10 @@ import {
 } from "./aws";
 import { unsequence } from "./dna";
 import fs from "fs";
+import { NBR_ATTRIBUTE } from "./constants";
 
 export const checkDNA = (dna: string) => {
-  return /[0-9A-Fa-f]{28}/g.test(dna);
+  return new RegExp(`/[0-9A-Fa-f]{${4 * NBR_ATTRIBUTE}}/g`).test(dna);
 };
 async function createGif(b64: string, algorithm: string = "neuquant") {
   return new Promise<Buffer>(async (resolveMain) => {
