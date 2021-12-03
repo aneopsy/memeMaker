@@ -9,15 +9,17 @@ import { Attribute } from "../types";
 import {
   downloadAttrS3,
   downloadImageS3,
+  downloadS3,
   getAttributeTable,
   uploadImageS3,
+  uploadS3,
 } from "./aws";
 import { unsequence } from "./dna";
 import fs from "fs";
-import { NBR_ATTRIBUTE } from "./constants";
+import { NBR_ATTRIBUTE, ORDER, BUCKET_ID } from "../config/general";
 
 export const checkDNA = (dna: string) => {
-  return new RegExp(`/[0-9A-Fa-f]{${4 * NBR_ATTRIBUTE}}/g`).test(dna);
+  return new RegExp(`[0-9A-Fa-f]{${4 * NBR_ATTRIBUTE}}`, "g").test(dna);
 };
 async function createGif(b64: string, algorithm: string = "neuquant") {
   return new Promise<Buffer>(async (resolveMain) => {
@@ -217,8 +219,7 @@ async function createCrop(b64: string) {
 
 const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
   const attributeTable = (await getAttributeTable()).attributes;
-  const order = [0, 1, 6, 5, 4, 3, 2];
-  return order.map((id) => ({
+  return ORDER.map((id) => ({
     trait_type: attributeTable[id].name,
     value: attr.find((a) => a.trait_type === attributeTable[id].name).value,
   }));
@@ -274,7 +275,7 @@ export const generateGif = async (dna: string) => {
 export const generateSample = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
   try {
-    return Buffer.from(await downloadImageS3(`sample/${dna}.png`));
+    return Buffer.from(await downloadS3(BUCKET_ID, `images/${dna}.png`));
   } catch {
     const unsequenced = await unsequence(dna);
     const images = await Promise.all(
@@ -286,7 +287,7 @@ export const generateSample = async (dna: string) => {
     );
     const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
     const sample = await createSample(b64);
-    await uploadImageS3(sample, `sample/${dna}.png`);
+    await uploadS3(BUCKET_ID, sample, `images/${dna}.png`);
     return sample;
   }
 };

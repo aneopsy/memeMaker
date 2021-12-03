@@ -19,7 +19,7 @@
     "moduleResolution": "node",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "src/config"],
   "exclude": ["node_modules", ".vscode"],
   "atom": {
     "rewriteTsconfig": false

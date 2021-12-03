@@ -42,22 +42,22 @@ app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 8081;
 
-app.get("/gif/:dna", async (req, res, next) => {
-  const { params } = req;
-  const dna = params?.dna;
-  if (!checkDNA(dna)) next("Wrong DNA");
-  const gif = await generateGif(dna);
-  res.writeHead(200, {
-    "Content-Type": "image/gif",
-    "Content-Length": gif.length,
-  });
-  res.end(gif);
-});
+// app.get("/gif/:dna", async (req, res, next) => {
+//   const { params } = req;
+//   const dna = params?.dna;
+//   if (!checkDNA(dna)) next("Wrong DNA");
+//   const gif = await generateGif(dna);
+//   res.writeHead(200, {
+//     "Content-Type": "image/gif",
+//     "Content-Length": gif.length,
+//   });
+//   res.end(gif);
+// });
 
 app.get("/sample/:dna", async (req, res, next) => {
   const { params } = req;
   const dna = params?.dna;
-  if (!checkDNA(dna)) next("Wrong DNA");
+  if (!checkDNA(dna)) next(`Wrong DNA : ${dna}`);
   const png = Buffer.from(
     (await generateSample(dna))
       .toString()
@@ -90,17 +90,17 @@ app.get("/sample/crop/:dna", async (req, res, next) => {
   res.end(png);
 });
 
-app.post("/gif", async (req, res) => {
-  const { body } = req;
-  const sequenced = await sequence(body);
+// app.post("/gif", async (req, res) => {
+//   const { body } = req;
+//   const sequenced = await sequence(body);
 
-  const gif = await generateGif(sequenced);
-  res.writeHead(200, {
-    "Content-Type": "image/gif",
-    "Content-Length": gif.length,
-  });
-  res.end(gif);
-});
+//   const gif = await generateGif(sequenced);
+//   res.writeHead(200, {
+//     "Content-Type": "image/gif",
+//     "Content-Length": gif.length,
+//   });
+//   res.end(gif);
+// });
 
 app.get("/decode/:dna", async (req, res) => {
   const { params } = req;
@@ -118,26 +118,6 @@ app.get("/attributes", async (req, res) => {
   const attributeTable = await getAttributeTable();
   res.writeHead(200, headers);
   res.end(JSON.stringify(attributeTable));
-});
-
-app.get("/metadatas", async (req, res) => {
-  const headers = { "Content-Type": "application/json" };
-  const metadatas = await getMetadatas();
-  res.writeHead(200, headers);
-  res.end(JSON.stringify(metadatas));
-});
-
-app.get("/pixsols", async (req, res) => {
-  const headers = { "Content-Type": "application/json" };
-  res.writeHead(200, headers);
-  res.end(JSON.stringify(pixsols));
-});
-
-app.get("/holders", async (req, res) => {
-  const headers = { "Content-Type": "application/json" };
-  const holders = await downloadS3("pixsols-config", "leaderboard.json");
-  res.writeHead(200, headers);
-  res.end(holders);
 });
 
 app.post("/encode", async (req, res) => {
