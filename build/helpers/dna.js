@@ -96,9 +96,8 @@ var unsequence = function (sequence) { return __awaiter(void 0, void 0, void 0, 
         switch (_a.label) {
             case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
             case 1:
-                attributeTable = _a.sent();
+                attributeTable = (_a.sent()).attributes;
                 return [2 /*return*/, hex2buff(sequence).reduce(function (acc, id, index) {
-                        console.log(id, attributeTable[index].name, attributeTable[index].items);
                         acc.push({
                             trait_type: attributeTable[index].name,
                             value: attributeTable[index].items.find(function (attr) { return attr.id === id; })
@@ -117,7 +116,7 @@ var sequence = function (object) { return __awaiter(void 0, void 0, void 0, func
         switch (_b.label) {
             case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
             case 1:
-                attributeTable = _b.sent();
+                attributeTable = (_b.sent()).attributes;
                 return [2 /*return*/, (buf2hex((_a = attributeTable === null || attributeTable === void 0 ? void 0 : attributeTable.reduce(function (acc, val) {
                         acc.push(object.find(function (attr) { return val.name === attr.trait_type; }));
                         return acc;

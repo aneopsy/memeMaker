@@ -1,10 +1,19 @@
 import AWS from "aws-sdk";
 import { AttributeItem } from "../types";
+import dotenv from "dotenv";
 
-const BUCKET = "nftcustdev";
+dotenv.config();
+
+import { BUCKET_ID_ID } from "../config/general";
+
+const config = {
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_S3_REGION,
+};
 
 export async function isExistS3(bucket: string, attachmentId: string) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
   try {
     await s3
       .headObject({
@@ -21,7 +30,7 @@ export async function isExistS3(bucket: string, attachmentId: string) {
 }
 
 export async function* paginateListObjectsV2(bucket: string) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
   try {
     const opts = {
       Bucket: bucket,
@@ -47,18 +56,18 @@ export async function listS3(bucket: string) {
 }
 
 export async function downloadAttrS3(attachmentId) {
-  const s3 = new AWS.S3(); // Pass in opts to S3 if necessary
+  const s3 = new AWS.S3(config); // Pass in opts to S3 if necessary
   const file = await s3
     .getObject({
-      Bucket: "pixsols-attributes", // your bucket name,
-      Key: attachmentId, // path to the object you're looking for
+      Bucket: BUCKET_ID, // your bucket name,
+      Key: "layers/" + attachmentId, // path to the object you're looking for
     })
     .promise();
   return file.Body;
 }
 
 export async function downloadImageS3(attachmentId) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
   try {
     const file = await s3
       .getObject({
@@ -74,7 +83,7 @@ export async function downloadImageS3(attachmentId) {
 }
 
 export async function uploadImageS3(file: Buffer | string, key: string) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
 
   try {
     const data = await s3
@@ -90,7 +99,7 @@ export async function uploadImageS3(file: Buffer | string, key: string) {
   }
 }
 export async function downloadS3(bucket: string, attachmentId: string) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
   try {
     const file = await s3
       .getObject({
@@ -109,7 +118,7 @@ export async function uploadS3(
   key: string,
   file: Buffer | string
 ) {
-  const s3 = new AWS.S3();
+  const s3 = new AWS.S3(config);
 
   try {
     await s3
@@ -129,11 +138,11 @@ export const getAttributeTable = async (): Promise<{
   attributes: AttributeItem[];
 }> =>
   JSON.parse(
-    (await downloadS3(BUCKET, "config/attributes.json")).toString()
+    (await downloadS3(BUCKET_ID, "config/attributes.json")).toString()
   ) as {
     timestamp: number;
     attributes: AttributeItem[];
   };
 
 export const getMetadatas = async (): Promise<any> =>
-  JSON.parse((await downloadS3(BUCKET, "config/metadatas.json")).toString());
+  JSON.parse((await downloadS3(BUCKET_ID, "config/metadatas.json")).toString());

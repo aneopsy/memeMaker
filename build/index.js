@@ -72,7 +72,6 @@ var metadata_1 = require("./helpers/metadata");
 var gif_1 = require("./helpers/gif");
 var dna_1 = require("./helpers/dna");
 var transactions_1 = require("./helpers/transactions");
-var pixsols_1 = __importDefault(require("./helpers/pixsols"));
 var constants_1 = require("./helpers/constants");
 var loglevel_1 = __importDefault(require("loglevel"));
 var aws_1 = require("./helpers/aws");
@@ -82,27 +81,17 @@ var app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 var port = process.env.PORT || 8081;
-app.get("/gif/:dna", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var params, dna, gif;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                params = req.params;
-                dna = params === null || params === void 0 ? void 0 : params.dna;
-                if (!(0, gif_1.checkDNA)(dna))
-                    next("Wrong DNA");
-                return [4 /*yield*/, (0, gif_1.generateGif)(dna)];
-            case 1:
-                gif = _a.sent();
-                res.writeHead(200, {
-                    "Content-Type": "image/gif",
-                    "Content-Length": gif.length,
-                });
-                res.end(gif);
-                return [2 /*return*/];
-        }
-    });
-}); });
+// app.get("/gif/:dna", async (req, res, next) => {
+//   const { params } = req;
+//   const dna = params?.dna;
+//   if (!checkDNA(dna)) next("Wrong DNA");
+//   const gif = await generateGif(dna);
+//   res.writeHead(200, {
+//     "Content-Type": "image/gif",
+//     "Content-Length": gif.length,
+//   });
+//   res.end(gif);
+// });
 app.get("/sample/:dna", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, png, _a, _b;
     return __generator(this, function (_c) {
@@ -111,7 +100,7 @@ app.get("/sample/:dna", function (req, res, next) { return __awaiter(void 0, voi
                 params = req.params;
                 dna = params === null || params === void 0 ? void 0 : params.dna;
                 if (!(0, gif_1.checkDNA)(dna))
-                    next("Wrong DNA");
+                    next("Wrong DNA : " + dna);
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, gif_1.generateSample)(dna)];
             case 1:
@@ -153,27 +142,16 @@ app.get("/sample/crop/:dna", function (req, res, next) { return __awaiter(void 0
         }
     });
 }); });
-app.post("/gif", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var body, sequenced, gif;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                body = req.body;
-                return [4 /*yield*/, (0, dna_1.sequence)(body)];
-            case 1:
-                sequenced = _a.sent();
-                return [4 /*yield*/, (0, gif_1.generateGif)(sequenced)];
-            case 2:
-                gif = _a.sent();
-                res.writeHead(200, {
-                    "Content-Type": "image/gif",
-                    "Content-Length": gif.length,
-                });
-                res.end(gif);
-                return [2 /*return*/];
-        }
-    });
-}); });
+// app.post("/gif", async (req, res) => {
+//   const { body } = req;
+//   const sequenced = await sequence(body);
+//   const gif = await generateGif(sequenced);
+//   res.writeHead(200, {
+//     "Content-Type": "image/gif",
+//     "Content-Length": gif.length,
+//   });
+//   res.end(gif);
+// });
 app.get("/decode/:dna", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var params, dna, unsequenced, headers;
     return __generator(this, function (_a) {
@@ -206,30 +184,6 @@ app.get("/attributes", function (req, res) { return __awaiter(void 0, void 0, vo
         }
     });
 }); });
-app.get("/pixsols", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var headers;
-    return __generator(this, function (_a) {
-        headers = { "Content-Type": "application/json" };
-        res.writeHead(200, headers);
-        res.end(JSON.stringify(pixsols_1.default));
-        return [2 /*return*/];
-    });
-}); });
-app.get("/holders", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var headers, holders;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                headers = { "Content-Type": "application/json" };
-                return [4 /*yield*/, (0, aws_1.downloadS3)("pixsols-config", "leaderboard.json")];
-            case 1:
-                holders = _a.sent();
-                res.writeHead(200, headers);
-                res.end(holders);
-                return [2 /*return*/];
-        }
-    });
-}); });
 app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var body, sequenced, headers;
     return __generator(this, function (_a) {
@@ -247,9 +201,9 @@ app.post("/encode", function (req, res) { return __awaiter(void 0, void 0, void 
     });
 }); });
 app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var mergePrice, authority, connection, walletKeyPair, headers, body, signedTx, tx, fetched, pixsolMint, hasPaid, newAttrInfo, newAttrs, metadataKey, metadataAccount, owners, ownerAccount, accountInfo, pixsolData, metadata, gifLink, _a, pixsolKey, instructions, txUpdateMetadata;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var mergePrice, authority, connection, walletKeyPair, headers, body, signedTx, attributeId, traitId, tx, fetched, pixsolMint, hasPaid, newAttrInfo, newAttrs, _a, _b, metadataKey, metadataAccount, owners, ownerAccount, accountInfo, pixsolData, metadata, gifLink, _c, pixsolKey, instructions, txUpdateMetadata;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 mergePrice = 12000000;
                 authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
@@ -257,15 +211,15 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                 walletKeyPair = anchor.web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(process.env.PRIVATE_KEY)));
                 headers = { "Content-Type": "application/json" };
                 body = req.body;
-                signedTx = body.signedTx;
+                signedTx = body.signedTx, attributeId = body.attributeId, traitId = body.traitId;
                 return [4 /*yield*/, connection.sendRawTransaction(signedTx, {
                         skipPreflight: true,
                     })];
             case 1:
-                tx = _b.sent();
+                tx = _d.sent();
                 return [4 /*yield*/, (0, transactions_1.awaitParsedConfirmedTransactions)(tx, constants_1.DEFAULT_TIMEOUT, connection, "confirmed")];
             case 2:
-                fetched = _b.sent();
+                fetched = _d.sent();
                 if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
                     return [2 /*return*/, res.status(400).send({
                             message: "Invalid Tx",
@@ -285,13 +239,13 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                         return acc;
                     }, [])];
             case 3:
-                newAttrInfo = _b.sent();
+                newAttrInfo = _d.sent();
                 if (!pixsolMint) {
                     return [2 /*return*/, res.status(400).send({
                             message: "No pixsolMint found in the Tx",
                         })];
                 }
-                if (!newAttrInfo.length) {
+                if (!newAttrInfo.length && traitId !== 0) {
                     return [2 /*return*/, res.status(400).send({
                             message: "No attributes found in the Tx",
                         })];
@@ -300,20 +254,26 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                         return [2 /*return*/, (0, gif_1.getAttrFromMint)(mint)];
                     }); }); }))];
             case 4:
-                newAttrs = _b.sent();
-                return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
+                newAttrs = _d.sent();
+                if (!(traitId === 0)) return [3 /*break*/, 6];
+                _b = (_a = newAttrs).push;
+                return [4 /*yield*/, (0, gif_1.getAttrFromId)(attributeId, traitId)];
             case 5:
-                metadataKey = _b.sent();
-                return [4 /*yield*/, connection.getAccountInfo(metadataKey)];
-            case 6:
-                metadataAccount = _b.sent();
-                return [4 /*yield*/, connection.getTokenLargestAccounts((0, various_1.toPublicKey)(pixsolMint))];
+                _b.apply(_a, [_d.sent()]);
+                _d.label = 6;
+            case 6: return [4 /*yield*/, (0, accounts_1.getMetadata)((0, various_1.toPublicKey)(pixsolMint))];
             case 7:
-                owners = _b.sent();
+                metadataKey = _d.sent();
+                return [4 /*yield*/, connection.getAccountInfo(metadataKey)];
+            case 8:
+                metadataAccount = _d.sent();
+                return [4 /*yield*/, connection.getTokenLargestAccounts((0, various_1.toPublicKey)(pixsolMint))];
+            case 9:
+                owners = _d.sent();
                 ownerAccount = owners.value[0].address;
                 return [4 /*yield*/, connection.getParsedAccountInfo(ownerAccount)];
-            case 8:
-                accountInfo = (_b.sent())
+            case 10:
+                accountInfo = (_d.sent())
                     .value;
                 if (accountInfo &&
                     "parsed" in accountInfo.data &&
@@ -325,32 +285,32 @@ app.post("/merge", function (req, res, next) { return __awaiter(void 0, void 0, 
                 }
                 pixsolData = (0, metadata_1.decodeMetadata)(metadataAccount.data).data;
                 return [4 /*yield*/, axios_1.default.get(pixsolData.uri)];
-            case 9:
-                metadata = (_b.sent()).data;
+            case 11:
+                metadata = (_d.sent()).data;
                 metadata.attributes = newAttrs
                     .reduce(function (acc, newAttr) {
                     acc = (0, dna_1.replaceAttr)(acc, newAttr);
                     return acc;
                 }, metadata.attributes)
                     .filter(function (attr) { return attr.trait_type !== "Rank"; });
-                _a = "https://pixsols-test.herokuapp.com/gif/";
+                _c = "https://pixsols-test.herokuapp.com/gif/";
                 return [4 /*yield*/, (0, dna_1.sequence)(metadata.attributes)];
-            case 10:
-                gifLink = _a + (_b.sent());
+            case 12:
+                gifLink = _c + (_d.sent());
                 metadata.image = gifLink;
                 metadata.properties.files[0].uri = gifLink;
                 pixsolKey = (0, sha256_1.default)("PIXSOLS" + String(metadata.id));
                 return [4 /*yield*/, (0, aws_1.uploadS3)("pixsols-metadatas", "pixsols/" + pixsolKey + ".json", JSON.stringify(metadata, null, 2))];
-            case 11:
-                _b.sent();
+            case 13:
+                _d.sent();
                 pixsolData.uri = "https://pixsols-metadatas.s3.amazonaws.com/pixsols/" + pixsolKey + ".json";
                 instructions = [];
                 return [4 /*yield*/, (0, metadata_1.updateMetadata)(pixsolData, undefined, undefined, pixsolMint, walletKeyPair.publicKey.toBase58(), instructions, metadataKey.toBase58())];
-            case 12:
-                _b.sent();
+            case 14:
+                _d.sent();
                 return [4 /*yield*/, (0, transactions_1.sendTransactionWithRetryWithKeypair)(connection, walletKeyPair, instructions, [], "confirmed")];
-            case 13:
-                txUpdateMetadata = _b.sent();
+            case 15:
+                txUpdateMetadata = _d.sent();
                 console.log("+ (" + pixsolData.name + ") " + pixsolMint + " updated | tx: " + txUpdateMetadata.txid);
                 res.writeHead(200, headers);
                 res.end(JSON.stringify({
@@ -459,8 +419,8 @@ app.post("/rename", function (req, res, next) { return __awaiter(void 0, void 0,
 //
 // OTHERS
 //
-app.get("/", function (req, res) { return res.send("You have reached the Pixsols Generator"); });
+app.get("/", function (req, res) { return res.send("You have reached the AneoPsy Server"); });
 app.listen(port, function () {
-    console.log("Pixsols Generator listening at on port " + port);
+    console.log("AneoPsy server listening at on port " + port);
 });
 //# sourceMappingURL=index.js.map

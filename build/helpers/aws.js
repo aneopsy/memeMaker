@@ -83,15 +83,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAttributeTable = exports.uploadS3 = exports.downloadS3 = exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = exports.listS3 = exports.paginateListObjectsV2 = exports.isExistS3 = void 0;
+exports.getMetadatas = exports.getAttributeTable = exports.uploadS3 = exports.downloadS3 = exports.uploadImageS3 = exports.downloadImageS3 = exports.downloadAttrS3 = exports.listS3 = exports.paginateListObjectsV2 = exports.isExistS3 = void 0;
 var aws_sdk_1 = __importDefault(require("aws-sdk"));
+var dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+var BUCKET = "nftdevbucket";
+var config = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_S3_REGION,
+};
 function isExistS3(bucket, attachmentId) {
     return __awaiter(this, void 0, void 0, function () {
         var s3, headErr_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -122,7 +130,7 @@ function paginateListObjectsV2(bucket) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 8, , 9]);
@@ -204,7 +212,7 @@ function downloadAttrS3(attachmentId) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     return [4 /*yield*/, s3
                             .getObject({
                             Bucket: "pixsols-attributes",
@@ -225,7 +233,7 @@ function downloadImageS3(attachmentId) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -254,7 +262,7 @@ function uploadImageS3(file, key) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -284,7 +292,8 @@ function downloadS3(bucket, attachmentId) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
+                    console.log(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -312,7 +321,7 @@ function uploadS3(bucket, key, file) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    s3 = new aws_sdk_1.default.S3();
+                    s3 = new aws_sdk_1.default.S3(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -341,11 +350,19 @@ var getAttributeTable = function () { return __awaiter(void 0, void 0, void 0, f
         switch (_c.label) {
             case 0:
                 _b = (_a = JSON).parse;
-                return [4 /*yield*/, downloadS3("pixsols-config", "attributes.json")];
-            case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])
-                    .attributes];
+                return [4 /*yield*/, downloadS3(BUCKET, "config/attributes.json")];
+            case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])];
         }
     });
 }); };
 exports.getAttributeTable = getAttributeTable;
+var getMetadatas = function () { return __awaiter(void 0, void 0, void 0, function () { var _a, _b; return __generator(this, function (_c) {
+    switch (_c.label) {
+        case 0:
+            _b = (_a = JSON).parse;
+            return [4 /*yield*/, downloadS3(BUCKET, "config/metadatas.json")];
+        case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])];
+    }
+}); }); };
+exports.getMetadatas = getMetadatas;
 //# sourceMappingURL=aws.js.map

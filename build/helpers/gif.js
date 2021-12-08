@@ -55,7 +55,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.update2Arweave = exports.generateCrop = exports.generateSample = exports.generateGif = exports.getAttrFromMint = exports.checkDNA = void 0;
+exports.update2Arweave = exports.generateCrop = exports.generateSample = exports.generateGif = exports.getAttrFromId = exports.getAttrFromMint = exports.checkDNA = void 0;
 var canvas_1 = require("canvas");
 var merge_images_1 = __importDefault(require("merge-images"));
 var gif_encoder_2_1 = __importDefault(require("gif-encoder-2"));
@@ -65,8 +65,10 @@ var form_data_1 = __importDefault(require("form-data"));
 var various_1 = require("./various");
 var aws_1 = require("./aws");
 var dna_1 = require("./dna");
+var fs_1 = __importDefault(require("fs"));
+var general_1 = require("../config/general");
 var checkDNA = function (dna) {
-    return /[0-9A-Fa-f]{28}/g.test(dna);
+    return new RegExp("[0-9A-Fa-f]{" + 4 * general_1.NBR_ATTRIBUTE + "}", "g").test(dna);
 };
 exports.checkDNA = checkDNA;
 function createGif(b64, algorithm) {
@@ -232,13 +234,24 @@ function removeImageBlanks(imageObject) {
         return null; // all image is white
     };
     var cropTop = scanY(true), cropBottom = scanY(false), cropLeft = scanX(true), cropRight = scanX(false), cropWidth = cropRight - cropLeft, cropHeight = cropBottom - cropTop;
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
+    var border = 20;
+    canvas.width = cropWidth + border * 2;
+    canvas.height = cropHeight + border * 2;
+    var refRes = { width: 224, height: 224 };
+    var scale = Math.min(refRes.width / canvas.width, refRes.height / canvas.height);
+    var origin = {
+        x: 0,
+        y: 0,
+    };
+    var ctx = canvas.getContext("2d");
     // finally crop the guy
-    canvas
-        .getContext("2d")
-        .drawImage(imageObject, cropLeft, cropTop, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-    return canvas.toDataURL();
+    ctx.drawImage(imageObject, cropLeft, cropTop, cropWidth, cropHeight, border, border, cropWidth, cropHeight);
+    var canvas2 = (0, canvas_1.createCanvas)(refRes.width, refRes.height);
+    var context2 = canvas2.getContext("2d");
+    context2.setTransform(scale, 0, 0, scale, origin.x, origin.y);
+    context2.drawImage(canvas, 0, 0);
+    context2.setTransform(1, 0, 0, 1, 0, 0);
+    return canvas2.toDataURL();
 }
 function createCrop(b64) {
     return __awaiter(this, void 0, void 0, function () {
@@ -265,14 +278,13 @@ function createCrop(b64) {
     });
 }
 var orderAttr = function (attr) { return __awaiter(void 0, void 0, void 0, function () {
-    var attributeTable, order;
+    var attributeTable;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
             case 1:
-                attributeTable = _a.sent();
-                order = [0, 1, 6, 5, 4, 3, 2];
-                return [2 /*return*/, order.map(function (id) { return ({
+                attributeTable = (_a.sent()).attributes;
+                return [2 /*return*/, general_1.ORDER.map(function (id) { return ({
                         trait_type: attributeTable[id].name,
                         value: attr.find(function (a) { return a.trait_type === attributeTable[id].name; }).value,
                     }); })];
@@ -285,7 +297,7 @@ var getAttrFromMint = function (mint) { return __awaiter(void 0, void 0, void 0,
         switch (_a.label) {
             case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
             case 1:
-                attributeTable = _a.sent();
+                attributeTable = (_a.sent()).attributes;
                 return [2 /*return*/, attributeTable.reduce(function (acc, val) {
                         if (val.items.find(function (x) { return x.mint === mint; }))
                             return {
@@ -298,6 +310,25 @@ var getAttrFromMint = function (mint) { return __awaiter(void 0, void 0, void 0,
     });
 }); };
 exports.getAttrFromMint = getAttrFromMint;
+var getAttrFromId = function (attributeId, traitId) { return __awaiter(void 0, void 0, void 0, function () {
+    var attributeTable;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, (0, aws_1.getAttributeTable)()];
+            case 1:
+                attributeTable = (_a.sent()).attributes;
+                return [2 /*return*/, attributeTable.reduce(function (acc, val) {
+                        if (val.id === attributeId)
+                            return {
+                                trait_type: val.name,
+                                value: val.items.find(function (x) { return x.id === traitId; }).name,
+                            };
+                        return acc;
+                    }, null)];
+        }
+    });
+}); };
+exports.getAttrFromId = getAttrFromId;
 var generateGif = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
     var _a, _b, _c, unsequenced, images, _d, _e, b64, gif;
     return __generator(this, function (_f) {
@@ -349,7 +380,7 @@ var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, f
             case 1:
                 _f.trys.push([1, 3, , 10]);
                 _b = (_a = Buffer).from;
-                return [4 /*yield*/, (0, aws_1.downloadImageS3)("sample/" + dna + ".png")];
+                return [4 /*yield*/, (0, aws_1.downloadS3)(general_1.BUCKET_ID, "images/" + dna + ".png")];
             case 2: return [2 /*return*/, _b.apply(_a, [_f.sent()])];
             case 3:
                 _c = _f.sent();
@@ -369,7 +400,7 @@ var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, f
                 return [4 /*yield*/, createSample(b64)];
             case 8:
                 sample = _f.sent();
-                return [4 /*yield*/, (0, aws_1.uploadImageS3)(sample, "sample/" + dna + ".png")];
+                return [4 /*yield*/, (0, aws_1.uploadS3)(general_1.BUCKET_ID, sample, "images/" + dna + ".png")];
             case 9:
                 _f.sent();
                 return [2 /*return*/, sample];
@@ -379,7 +410,7 @@ var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, f
 }); };
 exports.generateSample = generateSample;
 var generateCrop = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, _b, _c, unsequenced, images, _d, _e, b64, crop;
+    var _a, _b, _c, unsequenced, images, _d, _e, frame, b64, crop, final;
     return __generator(this, function (_f) {
         switch (_f.label) {
             case 0:
@@ -387,7 +418,7 @@ var generateCrop = function (dna) { return __awaiter(void 0, void 0, void 0, fun
                     throw new Error("Wrong DNA");
                 _f.label = 1;
             case 1:
-                _f.trys.push([1, 3, , 10]);
+                _f.trys.push([1, 3, , 11]);
                 _b = (_a = Buffer).from;
                 return [4 /*yield*/, (0, aws_1.downloadImageS3)("crop/" + dna + ".png")];
             case 2: return [2 /*return*/, _b.apply(_a, [_f.sent()])];
@@ -403,17 +434,24 @@ var generateCrop = function (dna) { return __awaiter(void 0, void 0, void 0, fun
                     })])];
             case 6:
                 images = _f.sent();
+                frame = fs_1.default.readFileSync("./src/img/frame.png");
                 return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
             case 7:
                 b64 = _f.sent();
                 return [4 /*yield*/, createCrop(b64)];
             case 8:
                 crop = _f.sent();
-                return [4 /*yield*/, (0, aws_1.uploadImageS3)(crop, "crop/" + dna + ".png")];
+                return [4 /*yield*/, (0, merge_images_1.default)([crop, frame], {
+                        Canvas: canvas_1.Canvas,
+                        Image: canvas_1.Image,
+                    })];
             case 9:
+                final = _f.sent();
+                return [4 /*yield*/, (0, aws_1.uploadImageS3)(final, "crop/" + dna + ".png")];
+            case 10:
                 _f.sent();
-                return [2 /*return*/, crop];
-            case 10: return [2 /*return*/];
+                return [2 /*return*/, final];
+            case 11: return [2 /*return*/];
         }
     });
 }); };
