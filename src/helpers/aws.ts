@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-import { BUCKET_ID_ID } from "../config/general";
+import { BUCKET_ID } from "../config/general";
 
 const config = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
