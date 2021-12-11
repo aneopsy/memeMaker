@@ -87,7 +87,7 @@ exports.getMetadatas = exports.getAttributeTable = exports.uploadS3 = exports.do
 var aws_sdk_1 = __importDefault(require("aws-sdk"));
 var dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-var BUCKET = "nftdevbucket";
+var general_1 = require("../config/general");
 var config = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -215,8 +215,8 @@ function downloadAttrS3(attachmentId) {
                     s3 = new aws_sdk_1.default.S3(config);
                     return [4 /*yield*/, s3
                             .getObject({
-                            Bucket: "pixsols-attributes",
-                            Key: attachmentId, // path to the object you're looking for
+                            Bucket: general_1.BUCKET_ID,
+                            Key: "layers/" + attachmentId, // path to the object you're looking for
                         })
                             .promise()];
                 case 1:
@@ -293,7 +293,6 @@ function downloadS3(bucket, attachmentId) {
             switch (_a.label) {
                 case 0:
                     s3 = new aws_sdk_1.default.S3(config);
-                    console.log(config);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -350,7 +349,7 @@ var getAttributeTable = function () { return __awaiter(void 0, void 0, void 0, f
         switch (_c.label) {
             case 0:
                 _b = (_a = JSON).parse;
-                return [4 /*yield*/, downloadS3(BUCKET, "config/attributes.json")];
+                return [4 /*yield*/, downloadS3(general_1.BUCKET_ID, "config/attributes.json")];
             case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])];
         }
     });
@@ -360,7 +359,7 @@ var getMetadatas = function () { return __awaiter(void 0, void 0, void 0, functi
     switch (_c.label) {
         case 0:
             _b = (_a = JSON).parse;
-            return [4 /*yield*/, downloadS3(BUCKET, "config/metadatas.json")];
+            return [4 /*yield*/, downloadS3(general_1.BUCKET_ID, "config/metadatas.json")];
         case 1: return [2 /*return*/, _b.apply(_a, [(_c.sent()).toString()])];
     }
 }); }); };

@@ -133,16 +133,16 @@ export async function uploadS3(
   }
 }
 
-export const getAttributeTable = async (): Promise<{
-  timestamp: number;
-  attributes: AttributeItem[];
-}> =>
-  JSON.parse(
-    (await downloadS3(BUCKET_ID, "config/attributes.json")).toString()
-  ) as {
-    timestamp: number;
-    attributes: AttributeItem[];
-  };
+// export const getAttributeTable = async (): Promise<{
+//   timestamp: number;
+//   attributes: AttributeItem[];
+// }> =>
+//   JSON.parse(
+//     (await downloadS3(BUCKET_ID, "config/attributes.json")).toString()
+//   ) as {
+//     timestamp: number;
+//     attributes: AttributeItem[];
+//   };
 
 export const getMetadatas = async (): Promise<any> =>
   JSON.parse((await downloadS3(BUCKET_ID, "config/metadatas.json")).toString());

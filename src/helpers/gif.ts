@@ -10,13 +10,13 @@ import {
   downloadAttrS3,
   downloadImageS3,
   downloadS3,
-  getAttributeTable,
   uploadImageS3,
   uploadS3,
 } from "./aws";
 import { unsequence } from "./dna";
 import fs from "fs";
 import { NBR_ATTRIBUTE, ORDER, BUCKET_ID } from "../config/general";
+import { getAttributeTable } from "./db";
 
 export const checkDNA = (dna: string) => {
   return new RegExp(`[0-9A-Fa-f]{${4 * NBR_ATTRIBUTE}}`, "g").test(dna);
@@ -218,7 +218,7 @@ async function createCrop(b64: string) {
 }
 
 const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
-  const attributeTable = (await getAttributeTable()).attributes;
+  const attributeTable = await getAttributeTable();
   return ORDER.map((id) => ({
     trait_type: attributeTable[id].name,
     value: attr.find((a) => a.trait_type === attributeTable[id].name).value,
@@ -226,7 +226,7 @@ const orderAttr = async (attr: Attribute[]): Promise<Attribute[]> => {
 };
 
 export const getAttrFromMint = async (mint: string): Promise<Attribute> => {
-  const attributeTable = (await getAttributeTable()).attributes;
+  const attributeTable = await getAttributeTable();
   return attributeTable.reduce((acc: Attribute, val): Attribute => {
     if (val.items.find((x) => x.mint === mint))
       return {
@@ -241,7 +241,7 @@ export const getAttrFromId = async (
   attributeId: number,
   traitId: number
 ): Promise<Attribute> => {
-  const attributeTable = (await getAttributeTable()).attributes;
+  const attributeTable = await getAttributeTable();
   return attributeTable.reduce((acc: Attribute, val): Attribute => {
     if (val.id === attributeId)
       return {
@@ -274,22 +274,22 @@ export const generateGif = async (dna: string) => {
 
 export const generateSample = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
-  // try {
-  // return Buffer.from(await downloadS3(BUCKET_ID, `images/${dna}.png`));
-  // } catch {
-  const unsequenced = await unsequence(dna);
-  const images = await Promise.all(
-    (
-      await orderAttr(unsequenced)
-    ).map((attr) =>
-      downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
-    )
-  );
-  const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-  const sample = await createSample(b64);
-  await uploadS3(BUCKET_ID, sample, `images/${dna}.png`);
-  return sample;
-  // }
+  try {
+    return Buffer.from(await downloadS3(BUCKET_ID, `images/${dna}.png`));
+  } catch {
+    const unsequenced = await unsequence(dna);
+    const images = await Promise.all(
+      (
+        await orderAttr(unsequenced)
+      ).map((attr) =>
+        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+      )
+    );
+    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+    const sample = await createSample(b64);
+    await uploadS3(BUCKET_ID, sample, `images/${dna}.png`);
+    return sample;
+  }
 };
 
 export const generateCrop = async (dna: string) => {

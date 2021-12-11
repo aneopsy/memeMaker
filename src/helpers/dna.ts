@@ -1,5 +1,5 @@
 import { Attribute } from "../types";
-import { getAttributeTable } from "./aws";
+import { getAttributeTable } from "./db";
 
 export function hex2buff(hexString) {
   hexString = hexString.replace(/^0x/, "");
@@ -33,7 +33,7 @@ export function buf2bin(buffer: number[]) {
 }
 
 export const unsequence = async (sequence: string): Promise<Attribute[]> => {
-  const attributeTable = (await getAttributeTable()).attributes;
+  const attributeTable = await getAttributeTable();
   return hex2buff(sequence).reduce((acc, id, index): any => {
     acc.push({
       trait_type: attributeTable[index].name,

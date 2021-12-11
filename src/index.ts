@@ -5,6 +5,7 @@ import * as nacl from "tweetnacl";
 import axios from "axios";
 import * as anchor from "@project-serum/anchor";
 import sha256 from "crypto-js/sha256";
+import mysql from "mysql2/promise";
 
 import { getConnection } from "./helpers/connection";
 import { getMetadata } from "./helpers/accounts";
@@ -27,12 +28,8 @@ import { Attribute } from "./types";
 import pixsols from "./helpers/pixsols";
 import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
-import {
-  downloadS3,
-  getAttributeTable,
-  getMetadatas,
-  uploadS3,
-} from "./helpers/aws";
+import { downloadS3, getMetadatas, uploadS3 } from "./helpers/aws";
+import { getAttributeTable } from "./helpers/db";
 
 log.setLevel("info");
 

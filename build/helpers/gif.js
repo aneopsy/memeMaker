@@ -370,41 +370,32 @@ var generateGif = function (dna) { return __awaiter(void 0, void 0, void 0, func
 }); };
 exports.generateGif = generateGif;
 var generateSample = function (dna) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, _b, _c, unsequenced, images, _d, _e, b64, sample;
-    return __generator(this, function (_f) {
-        switch (_f.label) {
+    var unsequenced, images, _a, _b, b64, sample;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
                 if (!(0, exports.checkDNA)(dna))
                     throw new Error("Wrong DNA");
-                _f.label = 1;
-            case 1:
-                _f.trys.push([1, 3, , 10]);
-                _b = (_a = Buffer).from;
-                return [4 /*yield*/, (0, aws_1.downloadS3)(general_1.BUCKET_ID, "images/" + dna + ".png")];
-            case 2: return [2 /*return*/, _b.apply(_a, [_f.sent()])];
-            case 3:
-                _c = _f.sent();
                 return [4 /*yield*/, (0, dna_1.unsequence)(dna)];
-            case 4:
-                unsequenced = _f.sent();
-                _e = (_d = Promise).all;
+            case 1:
+                unsequenced = _c.sent();
+                _b = (_a = Promise).all;
                 return [4 /*yield*/, orderAttr(unsequenced)];
-            case 5: return [4 /*yield*/, _e.apply(_d, [(_f.sent()).map(function (attr) {
+            case 2: return [4 /*yield*/, _b.apply(_a, [(_c.sent()).map(function (attr) {
                         return (0, aws_1.downloadAttrS3)(path_1.default.join(attr.trait_type, attr.value + ".png"));
                     })])];
-            case 6:
-                images = _f.sent();
+            case 3:
+                images = _c.sent();
                 return [4 /*yield*/, (0, merge_images_1.default)(images, { Canvas: canvas_1.Canvas, Image: canvas_1.Image })];
-            case 7:
-                b64 = _f.sent();
+            case 4:
+                b64 = _c.sent();
                 return [4 /*yield*/, createSample(b64)];
-            case 8:
-                sample = _f.sent();
+            case 5:
+                sample = _c.sent();
                 return [4 /*yield*/, (0, aws_1.uploadS3)(general_1.BUCKET_ID, sample, "images/" + dna + ".png")];
-            case 9:
-                _f.sent();
+            case 6:
+                _c.sent();
                 return [2 /*return*/, sample];
-            case 10: return [2 /*return*/];
         }
     });
 }); };
