@@ -14,6 +14,13 @@ export const getConnection = async () => {
   });
 };
 
+export const query = async (sql: string, params: any) => {
+  const connection = await getConnection();
+  const [results] = await connection.execute(sql, params);
+
+  return results;
+};
+
 export const getAttributeTable = async () => {
   const connection = await getConnection();
   const result = await connection.query(

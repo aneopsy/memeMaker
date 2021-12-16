@@ -98,12 +98,12 @@ export async function uploadImageS3(file: Buffer | string, key: string) {
     throw s3Err;
   }
 }
-export async function downloadS3(bucket: string, attachmentId: string) {
+export async function downloadS3(attachmentId: string) {
   const s3 = new AWS.S3(config);
   try {
     const file = await s3
       .getObject({
-        Bucket: bucket,
+        Bucket: BUCKET_ID,
         Key: attachmentId,
       })
       .promise();
@@ -113,17 +113,13 @@ export async function downloadS3(bucket: string, attachmentId: string) {
   }
 }
 
-export async function uploadS3(
-  bucket: string,
-  key: string,
-  file: Buffer | string
-) {
+export async function uploadS3(key: string, file: Buffer | string) {
   const s3 = new AWS.S3(config);
 
   try {
     await s3
       .upload({
-        Bucket: bucket,
+        Bucket: BUCKET_ID,
         Key: key,
         Body: file,
       })
@@ -145,4 +141,4 @@ export async function uploadS3(
 //   };
 
 export const getMetadatas = async (): Promise<any> =>
-  JSON.parse((await downloadS3(BUCKET_ID, "config/metadatas.json")).toString());
+  JSON.parse((await downloadS3("config/metadatas.json")).toString());

@@ -275,20 +275,24 @@ export const generateGif = async (dna: string) => {
 export const generateSample = async (dna: string) => {
   if (!checkDNA(dna)) throw new Error("Wrong DNA");
   try {
-    return Buffer.from(await downloadS3(BUCKET_ID, `images/${dna}.png`));
+    return Buffer.from(await downloadS3(`images/${dna}.png`));
   } catch {
-    const unsequenced = await unsequence(dna);
-    const images = await Promise.all(
-      (
-        await orderAttr(unsequenced)
-      ).map((attr) =>
-        downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
-      )
-    );
-    const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
-    const sample = await createSample(b64);
-    await uploadS3(BUCKET_ID, sample, `images/${dna}.png`);
-    return sample;
+    try {
+      const unsequenced = await unsequence(dna);
+      const images = await Promise.all(
+        (
+          await orderAttr(unsequenced)
+        ).map((attr) =>
+          downloadAttrS3(path.join(attr.trait_type, `${attr.value}.png`))
+        )
+      );
+      const b64 = await mergeImages(images, { Canvas: Canvas, Image: Image });
+      const sample = await createSample(b64);
+      await uploadS3(`images/${dna}.png`, sample);
+      return sample;
+    } catch (err) {
+      console.error(err);
+    }
   }
 };
 

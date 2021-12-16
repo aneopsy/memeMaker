@@ -30,6 +30,14 @@ import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
 import { downloadS3, getMetadatas, uploadS3 } from "./helpers/aws";
 import { getAttributeTable } from "./helpers/db";
+import {
+  AWS_URI,
+  ENV,
+  FEES,
+  HOST,
+  SALTKEY,
+  UPDATE_AUTHORITY,
+} from "./config/general";
 
 log.setLevel("info");
 
@@ -38,18 +46,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 8081;
-
-// app.get("/gif/:dna", async (req, res, next) => {
-//   const { params } = req;
-//   const dna = params?.dna;
-//   if (!checkDNA(dna)) next("Wrong DNA");
-//   const gif = await generateGif(dna);
-//   res.writeHead(200, {
-//     "Content-Type": "image/gif",
-//     "Content-Length": gif.length,
-//   });
-//   res.end(gif);
-// });
 
 app.get("/sample/:dna", async (req, res, next) => {
   const { params } = req;
@@ -87,18 +83,6 @@ app.get("/sample/crop/:dna", async (req, res, next) => {
   res.end(png);
 });
 
-// app.post("/gif", async (req, res) => {
-//   const { body } = req;
-//   const sequenced = await sequence(body);
-
-//   const gif = await generateGif(sequenced);
-//   res.writeHead(200, {
-//     "Content-Type": "image/gif",
-//     "Content-Length": gif.length,
-//   });
-//   res.end(gif);
-// });
-
 app.get("/decode/:dna", async (req, res) => {
   const { params } = req;
   const dna = params?.dna;
@@ -126,24 +110,24 @@ app.post("/encode", async (req, res) => {
   res.end(JSON.stringify(sequenced));
 });
 
-app.post("/merge", async (req, res, next) => {
-  const mergePrice = 12000000;
-  const authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
-  const connection = getConnection("mainnet-beta");
+app.post("/update", async (req, res, next) => {
+  log.info(`* Update method trigger`);
   const walletKeyPair = anchor.web3.Keypair.fromSecretKey(
     new Uint8Array(JSON.parse(process.env.PRIVATE_KEY))
   );
+
+  const connection = getConnection(ENV);
   const headers = { "Content-Type": "application/json" };
   const { body } = req;
-  const { signedTx, attributeId, traitId } = body;
-
-  const tx = await connection.sendRawTransaction(signedTx, {
-    skipPreflight: true,
-  });
+  const { signedTx } = body;
 
   //
   // VERIFICATION ON CHAIN FOR ATTR
   //
+  const tx = await connection.sendRawTransaction(signedTx, {
+    skipPreflight: true,
+  });
+  log.info(`+ Tx: ${tx}`);
   const fetched: any = await awaitParsedConfirmedTransactions(
     tx,
     DEFAULT_TIMEOUT,
@@ -155,185 +139,51 @@ app.post("/merge", async (req, res, next) => {
       message: "Invalid Tx",
     });
   }
-  let pixsolMint: string;
-  let hasPaid: boolean;
-  const newAttrInfo = await fetched.transaction.message.instructions.reduce(
-    (acc: string[], element: any) => {
-      if (element.program === "spl-memo") pixsolMint = element.parsed;
-      if (
-        element?.parsed?.type === "transfer" &&
-        element?.parsed?.info?.destination === authority &&
-        element.parsed.info.lamports === mergePrice
-      )
-        hasPaid = true;
-      if (
-        element?.parsed?.type === "burn" &&
-        element.parsed.info.amount === "1"
-      )
-        acc.push(element.parsed.info.mint);
-      return acc;
-    },
-    []
-  );
 
-  if (!pixsolMint) {
-    return res.status(400).send({
-      message: "No pixsolMint found in the Tx",
-    });
-  }
-  if (!newAttrInfo.length && traitId !== 0) {
-    return res.status(400).send({
-      message: "No attributes found in the Tx",
-    });
-  }
-
-  const newAttrs: Attribute[] = await Promise.all(
-    newAttrInfo.map(async (mint: any) => getAttrFromMint(mint))
-  );
-
-  if (traitId === 0) newAttrs.push(await getAttrFromId(attributeId, traitId));
-
-  //
-  // NEW METADATA
-  //
-  const metadataKey = await getMetadata(toPublicKey(pixsolMint));
-  const metadataAccount = await connection.getAccountInfo(metadataKey);
-  const owners = await connection.getTokenLargestAccounts(
-    toPublicKey(pixsolMint)
-  );
-  const ownerAccount = owners.value[0].address;
-  const accountInfo = (await connection.getParsedAccountInfo(ownerAccount))
-    .value;
-
-  if (
-    accountInfo &&
-    "parsed" in accountInfo.data &&
-    accountInfo.data.parsed.info.owner !==
-      fetched.transaction.message.accountKeys[0].pubkey.toBase58()
-  ) {
-    return res.status(400).send({
-      message: "You are not the Pixsol owner!",
-    });
-  }
-  const pixsolData = decodeMetadata(metadataAccount.data).data;
-
-  const metadata: any = (await axios.get(pixsolData.uri)).data;
-  metadata.attributes = newAttrs
-    .reduce((acc: Attribute[], newAttr: Attribute): Attribute[] => {
-      acc = replaceAttr(acc, newAttr);
-      return acc;
-    }, metadata.attributes)
-    .filter((attr) => attr.trait_type !== "Rank");
-  const gifLink = `https://pixsols-test.herokuapp.com/gif/${await sequence(
-    metadata.attributes
-  )}`;
-  metadata.image = gifLink;
-  metadata.properties.files[0].uri = gifLink;
-
-  const pixsolKey = sha256(`PIXSOLS${String(metadata.id)}`);
-  await uploadS3(
-    "pixsols-metadatas",
-    `pixsols/${pixsolKey}.json`,
-    JSON.stringify(metadata, null, 2)
-  );
-  pixsolData.uri = `https://pixsols-metadatas.s3.amazonaws.com/pixsols/${pixsolKey}.json`;
-
-  //
-  // SEND TX
-  //
-  const instructions: any[] = [];
-  await updateMetadata(
-    pixsolData,
-    undefined,
-    undefined,
-    pixsolMint,
-    walletKeyPair.publicKey.toBase58(),
-    instructions,
-    metadataKey.toBase58()
-  );
-  const txUpdateMetadata = await sendTransactionWithRetryWithKeypair(
-    connection,
-    walletKeyPair,
-    instructions,
-    [],
-    "confirmed"
-  );
-
-  console.log(
-    `+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${txUpdateMetadata.txid}`
-  );
-
-  res.writeHead(200, headers);
-  res.end(
-    JSON.stringify({
-      error: null,
-      txUpdateMetadata: txUpdateMetadata.txid,
-      mint: pixsolMint,
-      tx,
-    })
-  );
-});
-
-app.post("/rename", async (req, res, next) => {
-  const mergePrice = 12000000;
-  const authority = "Piiiij2D83a4TUosdUuA8hJZCRS8sfYvNLAPEw8P7tm";
-  const connection = getConnection("mainnet-beta");
-  const walletKeyPair = anchor.web3.Keypair.fromSecretKey(
-    new Uint8Array(JSON.parse(process.env.PRIVATE_KEY))
-  );
-  const headers = { "Content-Type": "application/json" };
-  const { body } = req;
-  const { signedTx, signer, signature, data } = body;
-
-  const verify = nacl.sign.detached.verify(
-    new TextEncoder().encode(JSON.stringify(data)),
-    bs58.decode(signature),
-    bs58.decode(signer)
-  );
-  const pixsolMint = body.data.params[0];
-
-  const tx = await connection.sendRawTransaction(signedTx, {
-    skipPreflight: true,
-  });
-
-  //
-  // VERIFICATION ON CHAIN FOR ATTR
-  //
-  const fetched: any = await awaitParsedConfirmedTransactions(
-    tx,
-    DEFAULT_TIMEOUT,
-    connection,
-    "confirmed"
-  );
-  if (fetched === null || !fetched.meta.status.hasOwnProperty("Ok")) {
-    return res.status(400).send({
-      message: "Invalid Tx",
-    });
-  }
-  let hasPaid: boolean;
-  await fetched.transaction.message.instructions.map((element: any) => {
+  let mint: string;
+  let dna: string;
+  let hasPaid: boolean = false;
+  await fetched.transaction.message.instructions.forEach((element: any) => {
+    console.log(
+      element?.parsed?.type === "transferChecked",
+      element?.parsed?.info?.destination ===
+        "EnRt9tEc4oEA53wQFGBad5ihBayzxrphhAb7VqRieGFJ",
+      element?.parsed?.info?.tokenAmount?.amount
+    );
+    if (element.program === "spl-memo") [mint, dna] = element.parsed.split(":");
     if (
-      element?.parsed?.type === "transfer" &&
-      element?.parsed?.info?.destination === authority &&
-      element.parsed.info.lamports === mergePrice
+      element?.parsed?.type === "transferChecked" &&
+      element?.parsed?.info?.destination ===
+        "EnRt9tEc4oEA53wQFGBad5ihBayzxrphhAb7VqRieGFJ" && //UPDATE_AUTHORITY
+      element?.parsed?.info?.tokenAmount?.amount === FEES
     )
       hasPaid = true;
-  });
+  }, []);
 
-  if (!pixsolMint) {
+  if (!mint) {
     return res.status(400).send({
-      message: "No pixsolMint found in the Tx",
+      message: "No Nft found in the Tx",
+    });
+  }
+  if (!dna) {
+    return res.status(400).send({
+      message: "No DNA found in the Tx",
     });
   }
 
+  log.info(`+ mint: ${mint}`);
+  log.info(`+ dna: ${dna}`);
+  log.info(`+ hasPaid: ${hasPaid}`);
+
+  const newAttrs: Attribute[] = await unsequence(dna);
+
+  log.info(`+ Attributes: ${JSON.stringify(newAttrs)}`);
   //
   // NEW METADATA
   //
-  const metadataKey = await getMetadata(toPublicKey(pixsolMint));
+  const metadataKey = await getMetadata(toPublicKey(mint));
   const metadataAccount = await connection.getAccountInfo(metadataKey);
-  const owners = await connection.getTokenLargestAccounts(
-    toPublicKey(pixsolMint)
-  );
+  const owners = await connection.getTokenLargestAccounts(toPublicKey(mint));
   const ownerAccount = owners.value[0].address;
   const accountInfo = (await connection.getParsedAccountInfo(ownerAccount))
     .value;
@@ -345,46 +195,57 @@ app.post("/rename", async (req, res, next) => {
       fetched.transaction.message.accountKeys[0].pubkey.toBase58()
   ) {
     return res.status(400).send({
-      message: "You are not the Pixsol owner!",
+      message: "You are not the NFT owner!",
     });
   }
-  const pixsolData = decodeMetadata(metadataAccount.data).data;
-
-  const metadata: any = (await axios.get(pixsolData.uri)).data;
-  metadata.name = `(#${metadata.id}) ${data.params[1]}`;
-  pixsolData.name = metadata.name;
-
-  const pixsolKey = sha256(`PIXSOLS${String(metadata.id)}`);
-  await uploadS3(
-    "pixsols-metadatas",
-    `pixsols/${pixsolKey}.json`,
-    JSON.stringify(metadata, null, 2)
+  const nftData = decodeMetadata(metadataAccount.data).data;
+  const metadata: any = (await axios.get(nftData.uri)).data;
+  metadata.attributes = newAttrs.reduce(
+    (acc: Attribute[], newAttr: Attribute): Attribute[] => {
+      acc = replaceAttr(acc, newAttr);
+      return acc;
+    },
+    metadata.attributes
   );
-  pixsolData.uri = `https://pixsols-metadatas.s3.amazonaws.com/pixsols/${pixsolKey}.json`;
+  const imageLink = `${AWS_URI}/images/${dna}.png`;
+  metadata.image = imageLink;
+  metadata.properties.files[0].uri = imageLink;
+
+  log.info(`+ imageLink: ${imageLink}`);
+
+  const NFTKey = sha256(`${SALTKEY}${String(metadata.id)}`);
+  nftData.uri = `${AWS_URI}/metadatas/${NFTKey}.json`;
 
   //
   // SEND TX
   //
   const instructions: any[] = [];
   await updateMetadata(
-    pixsolData,
+    nftData,
     undefined,
     undefined,
-    pixsolMint,
+    mint,
     walletKeyPair.publicKey.toBase58(),
     instructions,
     metadataKey.toBase58()
   );
+
+  //UPLOAD DURING WAITING PERIOD
+  console.log("uploadS3");
+  await uploadS3(`metadatas/${NFTKey}.json`, JSON.stringify(metadata, null, 2));
+  console.log("generate");
+  await generateSample(dna);
+
   const txUpdateMetadata = await sendTransactionWithRetryWithKeypair(
     connection,
     walletKeyPair,
     instructions,
     [],
-    "confirmed"
+    "processed"
   );
 
   console.log(
-    `+ (${pixsolData.name}) ${pixsolMint} updated | tx: ${txUpdateMetadata.txid}`
+    `+ (${nftData.name}) ${mint} updated | tx: ${txUpdateMetadata.txid}`
   );
 
   res.writeHead(200, headers);
@@ -392,7 +253,7 @@ app.post("/rename", async (req, res, next) => {
     JSON.stringify({
       error: null,
       txUpdateMetadata: txUpdateMetadata.txid,
-      mint: pixsolMint,
+      mint,
       tx,
     })
   );

@@ -45,7 +45,7 @@ export const RPC_MAINNET_BETA =
   "https://quiet-silent-surf.solana-mainnet.quiknode.pro/27c92aaf663ad7c61b87bdbc3947a1cc81318507/";
 export const RPC_DEVNET =
   // "https://summer-dawn-dawn.solana-devnet.quiknode.pro/0d2290f61d21e281ac2dd8b7f87fc6bc74f48b6a/";
-  "https://bitter-bitter-river.solana-devnet.quiknode.pro/2ea3194e68b148d27f2867f8270c6dd21f643d55/";
+  "https://wandering-patient-fire.solana-devnet.quiknode.pro/651ccb78ff7042e9f3cd34f25aea28180082b48d/";
 
 export const SYSTEM = new PublicKey("11111111111111111111111111111111");
 
