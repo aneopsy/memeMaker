@@ -29,7 +29,7 @@ import pixsols from "./helpers/pixsols";
 import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
 import { downloadS3, getMetadatas, uploadS3 } from "./helpers/aws";
-import { addUniq, getAttributeTable, isUniq } from "./helpers/db";
+import { addUniq, getAttributeTable, isUniq, removeUniq } from "./helpers/db";
 import {
   AWS_URI,
   ENV,
@@ -144,12 +144,6 @@ app.post("/update", async (req, res, next) => {
   let dna: string;
   let hasPaid: boolean = false;
   await fetched.transaction.message.instructions.forEach((element: any) => {
-    console.log(
-      element?.parsed?.type === "transferChecked",
-      element?.parsed?.info?.destination ===
-        "EnRt9tEc4oEA53wQFGBad5ihBayzxrphhAb7VqRieGFJ",
-      element?.parsed?.info?.tokenAmount?.amount
-    );
     if (element.program === "spl-memo") [mint, dna] = element.parsed.split(":");
     if (
       element?.parsed?.type === "transferChecked" &&
@@ -170,7 +164,7 @@ app.post("/update", async (req, res, next) => {
       message: "No DNA found in the Tx",
     });
   }
-  if (!isUniq(dna)) {
+  if (!(await isUniq(dna))) {
     return res.status(400).send({
       message: "DNA not unique",
     });
@@ -205,6 +199,8 @@ app.post("/update", async (req, res, next) => {
   }
   const nftData = decodeMetadata(metadataAccount.data).data;
   const metadata: any = (await axios.get(nftData.uri)).data;
+  const oldDNA = await sequence(metadata.attributes);
+
   metadata.attributes = newAttrs.reduce(
     (acc: Attribute[], newAttr: Attribute): Attribute[] => {
       acc = replaceAttr(acc, newAttr);
@@ -240,6 +236,7 @@ app.post("/update", async (req, res, next) => {
   await uploadS3(`metadatas/${NFTKey}.json`, JSON.stringify(metadata, null, 2));
   console.log("generate");
   await generateSample(dna);
+  await removeUniq(oldDNA);
   await addUniq(mint, dna);
 
   const txUpdateMetadata = await sendTransactionWithRetryWithKeypair(

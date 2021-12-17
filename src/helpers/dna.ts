@@ -44,7 +44,7 @@ export const unsequence = async (sequence: string): Promise<Attribute[]> => {
   }, []);
 };
 
-export const sequence = async (object: any[]): Promise<string> => {
+export const sequence = async (object: Attribute[]): Promise<string> => {
   const attributeTable = await getAttributeTable();
   return (
     buf2hex(

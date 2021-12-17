@@ -40,15 +40,23 @@ export const getAttributeTable = async () => {
 export const isUniq = async (dna) => {
   const connection = await getConnection();
   const result = await connection.query(
-    `SELECT count(*) FROM uniqueness u WHERE dna = "${dna}"`
+    `SELECT count(*) AS count FROM uniqueness WHERE dna="${dna}"`
   );
-  return (result[0] as unknown) === 0;
+  return (result[0] as any[])[0].count === 0;
 };
 
 export const addUniq = async (mint, dna) => {
   const connection = await getConnection();
   const result = await connection.query(
-    `INSERT INTO uniqueness (mint, dna, update_timestamp) VALUES (${mint}, ${dna}, ${Date.now()})`
+    `INSERT INTO uniqueness (mint, dna, update_timestamp) VALUES ("${mint}", "${dna}", ${Date.now()})`
   );
-  return (result[0] as unknown) === 0;
+  return result;
+};
+
+export const removeUniq = async (dna) => {
+  const connection = await getConnection();
+  const result = await connection.query(
+    `DELETE FROM uniqueness WHERE  dna="${dna}"`
+  );
+  return result;
 };
