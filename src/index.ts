@@ -29,7 +29,7 @@ import pixsols from "./helpers/pixsols";
 import { DEFAULT_TIMEOUT } from "./helpers/constants";
 import log from "loglevel";
 import { downloadS3, getMetadatas, uploadS3 } from "./helpers/aws";
-import { getAttributeTable } from "./helpers/db";
+import { addUniq, getAttributeTable, isUniq } from "./helpers/db";
 import {
   AWS_URI,
   ENV,
@@ -170,6 +170,11 @@ app.post("/update", async (req, res, next) => {
       message: "No DNA found in the Tx",
     });
   }
+  if (!isUniq(dna)) {
+    return res.status(400).send({
+      message: "DNA not unique",
+    });
+  }
 
   log.info(`+ mint: ${mint}`);
   log.info(`+ dna: ${dna}`);
@@ -235,6 +240,7 @@ app.post("/update", async (req, res, next) => {
   await uploadS3(`metadatas/${NFTKey}.json`, JSON.stringify(metadata, null, 2));
   console.log("generate");
   await generateSample(dna);
+  await addUniq(mint, dna);
 
   const txUpdateMetadata = await sendTransactionWithRetryWithKeypair(
     connection,
